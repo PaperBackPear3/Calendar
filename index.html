@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Importatore Calendario & Esportatore PDF</title>
 
-  <!-- Librerie Esterne: SheetJS e html2pdf -->
+  <!-- Librerie Esterne -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -1526,23 +1526,65 @@
       return card;
     }
 
-    function exportToPDF() {
+    async function exportToPDF() {
+      const button = document.getElementById('exportPdfButton');
       const element = document.getElementById('pdfContent');
       const yearSelection = document.getElementById('yearSelect').value;
       const pageSize = document.getElementById('pageSizeOpt').value;
       const orientation = document.getElementById('pdfOrientation').value;
       const pageLayout = document.getElementById('pageLayoutOpt').value;
 
-      const opt = {
-        margin: pageLayout === 'multi' ? 8 : 4,
-        filename: `Calendario_${yearSelection}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: pageSize, orientation: orientation },
-        pagebreak: { mode: ['avoid-all', 'css'] }
-      };
+      if (!element.children.length) {
+        alert('Nessuna pagina da esportare.');
+        return;
+      }
 
-      html2pdf().set(opt).from(element).save();
+      // html2pdf.js exposes html2pdf, while html2canvas/jsPDF are bundled inside it.
+      if (typeof window.html2pdf !== 'function') {
+        alert("La libreria per l'esportazione PDF non è stata caricata. Ricarica la pagina e riprova.");
+        return;
+      }
+
+      if (button.disabled) return;
+      button.disabled = true;
+      const originalLabel = button.textContent;
+      button.textContent = 'Generazione PDF…';
+
+      try {
+        // Let fonts/layout settle before html2canvas clones the document.
+        if (document.fonts?.ready) await document.fonts.ready;
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const opt = {
+          margin: pageLayout === 'multi' ? 8 : 4,
+          filename: `Calendario_${yearSelection}.pdf`,
+          image: { type: 'jpeg', quality: 0.96 },
+          html2canvas: {
+            scale: 1.5,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            imageTimeout: 15000,
+            logging: false,
+            removeContainer: true
+          },
+          jsPDF: {
+            unit: 'mm',
+            format: pageSize,
+            orientation,
+            compress: true
+          },
+          // Keep modern CSS pagination; do not use the old html2pdf "legacy" mode.
+          pagebreak: { mode: ['avoid-all', 'css'] }
+        };
+
+        await window.html2pdf().set(opt).from(element).save();
+      } catch (error) {
+        console.error("Errore durante l'esportazione PDF:", error);
+        alert(`Impossibile generare il PDF. ${error?.message || 'Controlla la console per i dettagli.'}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
     }
   </script>
 </body>
