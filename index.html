@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Importatore Calendario & Esportatore PDF</title>
 
-  <!-- Librerie Esterne -->
+  <!-- Librerie Esterne: SheetJS e html2pdf -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -29,11 +29,12 @@
     body {
       background-color: var(--bg);
       color: var(--text);
+      display: flex;
       height: 100vh;
       overflow: hidden;
     }
 
-    /* Layout */
+    /* Layout Principale Responsivo */
     .app-container {
       display: flex;
       width: 100vw;
@@ -297,7 +298,7 @@
       color: #ef4444;
     }
 
-    /* PDF preview */
+    /* Area Anteprima Foglio PDF Dynamic Dimensions */
     #pdfContent {
       display: flex;
       flex-direction: column;
@@ -315,13 +316,16 @@
       position: relative;
       display: flex;
       flex-direction: column;
+      page-break-after: always;
       break-after: page;
+      page-break-inside: avoid;
       break-inside: avoid;
       flex-shrink: 0;
       overflow: hidden;
     }
 
     .pdf-page:last-child {
+      page-break-after: auto;
       break-after: auto;
     }
 
@@ -367,7 +371,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* Book spread layout */
+    /* SPECULAR LAYOUT */
     .pdf-page.page-left {
       padding-right: 18mm;
       padding-left: 8mm;
@@ -428,14 +432,16 @@
       min-height: 0;
     }
 
-    /* Keep month blocks together */
+    /* Strict Anti-Split Rule for Month Containers */
     .month-card,
     .list-view-month {
+      page-break-inside: avoid !important;
+      break-inside: avoid-page !important;
       box-sizing: border-box;
       max-height: 100%;
     }
 
-    /* Calendar month grid */
+    /* Stili Grafica Calendario Singolo Mese (Fixed Grid) */
     .month-card {
       display: flex;
       flex-direction: column;
@@ -504,7 +510,7 @@
       line-height: 1.1;
     }
 
-    /* List view */
+    /* Stili Grafica Vista Elenco (Flat View) */
     .list-view-month {
       background: #fff;
       border-radius: 6px;
@@ -594,7 +600,7 @@
       margin-left: 6px;
     }
 
-    /* Compact multi-month layout */
+    /* Stili Compatti per Griglie Multi-Mese */
     .pdf-page.compact .month-header {
       font-size: 0.78rem;
       margin-bottom: 2px;
@@ -681,7 +687,8 @@
         <h2>1. Importa File Multipli</h2>
         <div class="form-group">
           <label for="fileInput">Seleziona uno o più file (.ics, .csv, .xlsx)</label>
-          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .ics" multiple>
+          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .ics" multiple
+            onchange="handleMultipleFileUpload(event)">
         </div>
         <label style="margin-top:4px; display:block;">Categorie rilevate:</label>
         <div id="sectorLegend" class="sector-legend"></div>
@@ -692,13 +699,13 @@
         <h2>2. Filtro Anno & Azioni In Massa</h2>
         <div class="form-group">
           <label for="yearSelect">Filtro Anno Visualizzato</label>
-          <select id="yearSelect"></select>
+          <select id="yearSelect" onchange="updateCalendar()"></select>
         </div>
         <div id="yearInfo" style="font-size:0.75rem; color:#64748b; font-weight:500; margin-bottom: 8px;"></div>
 
         <label>Eliminazione per Anno:</label>
         <div id="bulkYearsContainer" class="bulk-years-list"></div>
-        <button type="button" class="danger" id="deleteSelectedYearsButton"
+        <button type="button" class="danger" onclick="deleteSelectedYears()"
           style="width:100%; font-size:0.78rem; padding:6px;">
           Elimina Anni Selezionati
         </button>
@@ -707,7 +714,7 @@
       <!-- 3. Aggiungi / Modifica Evento -->
       <div class="section-card">
         <h2 id="formTitle">3. Aggiungi Evento</h2>
-        <form id="eventForm">
+        <form id="eventForm" onsubmit="saveEvent(event)">
           <input type="hidden" id="eventId">
           <div class="form-group">
             <label for="eventTitle">Nome Evento</label>
@@ -727,7 +734,7 @@
           </div>
           <div style="display:flex; gap: 6px;">
             <button type="submit" style="flex:1;">Salva</button>
-            <button type="button" class="secondary" id="resetFormButton">Pulisci</button>
+            <button type="button" class="secondary" onclick="resetForm()">Pulisci</button>
           </div>
         </form>
       </div>
@@ -736,8 +743,8 @@
       <div class="section-card">
         <h2>
           Registro Eventi
-          <button type="button" class="danger" id="clearAllButton" style="font-size:0.7rem; padding: 2px 6px;">Elimina
-            Tutti</button>
+          <button type="button" class="danger" onclick="clearAllEvents()"
+            style="font-size:0.7rem; padding: 2px 6px;">Elimina Tutti</button>
         </h2>
         <div class="event-list" id="eventListContainer"></div>
       </div>
@@ -747,7 +754,7 @@
         <h2>4. Opzioni Export PDF</h2>
         <div class="form-group">
           <label for="pageSizeOpt">Formato Dimensione Pagina</label>
-          <select id="pageSizeOpt" data-refresh-calendar>
+          <select id="pageSizeOpt" onchange="updateCalendar()">
             <option value="a4" selected>A4 (210 x 297 mm)</option>
             <option value="a3">A3 (297 x 420 mm)</option>
             <option value="letter">Letter (216 x 279 mm)</option>
@@ -755,21 +762,21 @@
         </div>
         <div class="form-group">
           <label for="viewMode">Formato Vista Mesi</label>
-          <select id="viewMode" data-refresh-calendar>
+          <select id="viewMode" onchange="updateCalendar()">
             <option value="grid">Griglia Classica</option>
             <option value="list">Vista Elenco Elegante (Flat View)</option>
           </select>
         </div>
         <div class="form-group">
           <label for="monthFilter">Mesi Inclusi</label>
-          <select id="monthFilter" data-refresh-calendar>
+          <select id="monthFilter" onchange="updateCalendar()">
             <option value="all">Tutti i Mesi dell'Anno</option>
             <option value="active" selected>Solo Mesi con Eventi</option>
           </select>
         </div>
         <div class="form-group">
           <label for="pageLayoutOpt">Impaginazione PDF</label>
-          <select id="pageLayoutOpt">
+          <select id="pageLayoutOpt" onchange="toggleSplitOption(); updateCalendar();">
             <option value="single" selected>Tutto in 1 Singola Pagina</option>
             <option value="dual">2 Pagine Speculari (Libro)</option>
             <option value="multi">1 Pagina per ogni Mese</option>
@@ -779,7 +786,7 @@
         <!-- Opzioni Divisione Avanzata -->
         <div class="form-group" id="splitYearGroup" style="display:none;">
           <label for="splitYearOpt">Modalità Divisione 2 Pagine</label>
-          <select id="splitYearOpt" data-refresh-calendar>
+          <select id="splitYearOpt" onchange="updateCalendar()">
             <option value="split_years" selected>Dividi per Anno (Pagina 1: Primo Anno / Pagina 2: Secondo Anno)
             </option>
             <option value="chronological">Sequenziale (50% Mesi / 50% Mesi)</option>
@@ -789,12 +796,12 @@
 
         <div class="form-group">
           <label for="pdfOrientation">Orientamento Foglio</label>
-          <select id="pdfOrientation" data-refresh-calendar>
+          <select id="pdfOrientation" onchange="updateCalendar()">
             <option value="landscape" selected>Orizzontale (Landscape)</option>
             <option value="portrait">Verticale (Portrait)</option>
           </select>
         </div>
-        <button id="exportPdfButton"
+        <button onclick="exportToPDF()"
           style="width: 100%; padding: 10px; background-color: #16a34a; font-size: 0.9rem; margin-top: 4px;">
           Scarica PDF
         </button>
@@ -817,35 +824,7 @@
     const defaultPalette = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4f46e5', '#059669', '#ca8a04'];
 
     document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById('fileInput').addEventListener('change', handleMultipleFileUpload);
-      document.getElementById('deleteSelectedYearsButton').addEventListener('click', deleteSelectedYears);
-      document.getElementById('sectorLegend').addEventListener('change', event => {
-        const picker = event.target.closest('.sector-color-picker');
-        if (!picker) return;
-        updateCategoryColor(picker.dataset.sector, picker.value);
-      });
-      document.getElementById('yearSelect').addEventListener('change', updateCalendar);
-      document.getElementById('eventForm').addEventListener('submit', saveEvent);
-      document.getElementById('resetFormButton').addEventListener('click', resetForm);
-      document.getElementById('clearAllButton').addEventListener('click', clearAllEvents);
-      document.getElementById('exportPdfButton').addEventListener('click', exportToPDF);
-      document.querySelectorAll('[data-refresh-calendar]').forEach(control => {
-        control.addEventListener('change', updateCalendar);
-      });
-      document.getElementById('pageLayoutOpt').addEventListener('change', () => {
-        toggleSplitOption();
-        updateCalendar();
-      });
-      document.getElementById('eventListContainer').addEventListener('click', event => {
-        const button = event.target.closest('[data-action][data-event-id]');
-        if (!button) return;
-        const id = button.dataset.eventId;
-        if (button.dataset.action === 'edit') editEvent(id);
-        if (button.dataset.action === 'delete') deleteEvent(id);
-      });
-
       updateYearOptions();
-      renderSectorLegend();
       renderEventList();
       updateCalendar();
     });
@@ -934,7 +913,9 @@
 
       if (confirm(`Sei sicuro di voler eliminare gli eventi per gli anni: ${selectedYears.join(', ')}?`)) {
         events = events.filter(e => !selectedYears.includes(e.date.split('-')[0]));
-        refreshUI({ years: true });
+        updateYearOptions();
+        renderEventList();
+        updateCalendar();
       }
     }
 
@@ -963,7 +944,10 @@
 
       if (newEvents.length > 0) {
         events = [...events, ...newEvents];
-        refreshUI({ years: true, legend: true });
+        updateYearOptions();
+        renderSectorLegend();
+        renderEventList();
+        updateCalendar();
       } else {
         alert("Nessun evento valido trovato nei file selezionati.");
       }
@@ -1106,7 +1090,7 @@
         chip.className = 'sector-chip';
         chip.innerHTML = `
           <div class="sector-chip-left">
-            <input type="color" class="sector-color-picker" value="${sectorColors[sec]}" >
+            <input type="color" class="sector-color-picker" value="${sectorColors[sec]}" onchange="updateCategoryColor('${sec}', this.value)">
             <span>${sec}</span>
           </div>
         `;
@@ -1121,7 +1105,8 @@
           evt.color = newColor;
         }
       });
-      refreshUI();
+      renderEventList();
+      updateCalendar();
     }
 
     function saveEvent(e) {
@@ -1143,7 +1128,10 @@
       }
 
       resetForm();
-      refreshUI({ years: true, legend: true });
+      updateYearOptions();
+      renderSectorLegend();
+      renderEventList();
+      updateCalendar();
     }
 
     function editEvent(id) {
@@ -1159,7 +1147,9 @@
 
     function deleteEvent(id) {
       events = events.filter(e => e.id !== id);
-      refreshUI({ years: true });
+      updateYearOptions();
+      renderEventList();
+      updateCalendar();
     }
 
     function clearAllEvents() {
@@ -1167,7 +1157,9 @@
         events = [];
         sectorColors = {};
         document.getElementById('sectorLegend').innerHTML = '';
-        refreshUI({ years: true });
+        updateYearOptions();
+        renderEventList();
+        updateCalendar();
       }
     }
 
@@ -1197,8 +1189,8 @@
             </div>
           </div>
           <div>
-            <button type="button" class="action-btn" data-action="edit" data-event-id="${evt.id}">✎</button>
-            <button type="button" class="action-btn delete" data-action="delete" data-event-id="${evt.id}">&times;</button>
+            <button type="button" class="action-btn" onclick="editEvent('${evt.id}')">✎</button>
+            <button type="button" class="action-btn delete" onclick="deleteEvent('${evt.id}')">&times;</button>
           </div>
         `;
         container.appendChild(item);
@@ -1221,6 +1213,11 @@
       let cols = orientation === 'landscape' ? Math.ceil(Math.sqrt(count * 1.3)) : Math.ceil(Math.sqrt(count * 0.75));
       let rows = Math.ceil(count / cols);
       return { cols, rows };
+    }
+
+    function getEventsForMonth(year, month) {
+      const monthStr = String(month + 1).padStart(2, '0');
+      return events.filter(event => event.date.startsWith(`${year}-${monthStr}`));
     }
 
     function getMonthEventCount(year, month) {
@@ -1268,18 +1265,6 @@
       });
 
       pageElement.appendChild(legendNode);
-    }
-
-    function getEventsForMonth(year, month) {
-      const monthStr = String(month + 1).padStart(2, '0');
-      return events.filter(event => event.date.startsWith(`${year}-${monthStr}`));
-    }
-
-    function refreshUI({ years = false, legend = false } = {}) {
-      if (years) updateYearOptions();
-      if (legend) renderSectorLegend();
-      renderEventList();
-      updateCalendar();
     }
 
     function updateCalendar() {
@@ -1527,63 +1512,47 @@
     }
 
     async function exportToPDF() {
-      const button = document.getElementById('exportPdfButton');
       const element = document.getElementById('pdfContent');
       const yearSelection = document.getElementById('yearSelect').value;
       const pageSize = document.getElementById('pageSizeOpt').value;
       const orientation = document.getElementById('pdfOrientation').value;
       const pageLayout = document.getElementById('pageLayoutOpt').value;
+      const button = document.querySelector('button[onclick="exportToPDF()"]');
 
-      if (!element.children.length) {
-        alert('Nessuna pagina da esportare.');
-        return;
-      }
-
-      // html2pdf.js exposes html2pdf, while html2canvas/jsPDF are bundled inside it.
-      if (typeof window.html2pdf !== 'function') {
+      if (typeof html2pdf !== 'function') {
         alert("La libreria per l'esportazione PDF non è stata caricata. Ricarica la pagina e riprova.");
         return;
       }
 
-      if (button.disabled) return;
-      button.disabled = true;
-      const originalLabel = button.textContent;
-      button.textContent = 'Generazione PDF…';
+      if (!element || !element.children.length) {
+        alert('Nessun contenuto da esportare.');
+        return;
+      }
+
+      const opt = {
+        margin: pageLayout === 'multi' ? 8 : 4,
+        filename: `Calendario_${yearSelection}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: pageSize, orientation: orientation },
+        pagebreak: { mode: ['avoid-all', 'css'] }
+      };
 
       try {
-        // Let fonts/layout settle before html2canvas clones the document.
         if (document.fonts?.ready) await document.fonts.ready;
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-        const opt = {
-          margin: pageLayout === 'multi' ? 8 : 4,
-          filename: `Calendario_${yearSelection}.pdf`,
-          image: { type: 'jpeg', quality: 0.96 },
-          html2canvas: {
-            scale: 1.5,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            imageTimeout: 15000,
-            logging: false,
-            removeContainer: true
-          },
-          jsPDF: {
-            unit: 'mm',
-            format: pageSize,
-            orientation,
-            compress: true
-          },
-          // Keep modern CSS pagination; do not use the old html2pdf "legacy" mode.
-          pagebreak: { mode: ['avoid-all', 'css'] }
-        };
-
-        await window.html2pdf().set(opt).from(element).save();
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'Generazione PDF…';
+        }
+        await html2pdf().set(opt).from(element).save();
       } catch (error) {
-        console.error("Errore durante l'esportazione PDF:", error);
-        alert(`Impossibile generare il PDF. ${error?.message || 'Controlla la console per i dettagli.'}`);
+        console.error('Errore durante l\'esportazione PDF:', error);
+        alert('Impossibile generare il PDF. Riprova.');
       } finally {
-        button.disabled = false;
-        button.textContent = originalLabel;
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Scarica PDF';
+        }
       }
     }
   </script>
