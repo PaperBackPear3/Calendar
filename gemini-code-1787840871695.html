@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,82 +19,512 @@
       --text: #0f172a;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
 
-    /* Layout */
-    .app-container { display: flex; width: 100vw; height: 100vh; }
-    .sidebar { width: 360px; background: var(--panel-bg); border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
-    .main-preview { flex: 1; padding: 30px; overflow-y: auto; background-color: #f1f5f9; display: flex; justify-content: center; align-items: flex-start; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-    /* Control Groups */
-    .section-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
-    h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 10px; color: #1e293b; display: flex; align-items: center; justify-content: space-between; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-    label { font-size: 0.8rem; font-weight: 600; color: #475569; }
-    input, select, button { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; outline: none; }
-    input[type="color"] { padding: 2px; height: 36px; cursor: pointer; }
-    input[type="file"] { background: white; font-size: 0.8rem; }
-    
-    button { cursor: pointer; background-color: var(--primary); color: white; border: none; font-weight: 600; transition: background 0.2s; }
-    button:hover { background-color: #1d4ed8; }
-    button.secondary { background-color: #64748b; }
-    button.secondary:hover { background-color: #475569; }
-    button.danger { background-color: #ef4444; }
-    button.danger:hover { background-color: #dc2626; }
+    /* Layout Principale */
+    .app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+    }
 
-    /* Sector Badges & Category Color Picker */
-    .sector-legend { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 120px; overflow-y: auto; }
-    .sector-chip { display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; padding: 4px 8px; border-radius: 6px; background: white; border: 1px solid var(--border); font-weight: 500; }
-    .sector-chip-left { display: flex; align-items: center; gap: 8px; }
-    .sector-color-picker { border: none; padding: 0; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; background: none; }
-    .sector-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
-    .sector-color-picker::-webkit-color-swatch { border: none; border-radius: 50%; }
+    .sidebar {
+      width: 360px;
+      background: var(--panel-bg);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
 
-    /* Event Registry List */
-    .event-list { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-    .event-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: white; border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; }
-    .event-info { display: flex; align-items: center; gap: 8px; overflow: hidden; }
-    .event-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
-    .action-btn { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 0 3px; color: #64748b; }
-    .action-btn.delete:hover { color: #ef4444; }
+    .main-preview {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+      background-color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
 
-    /* Export Area */
-    #pdfContent { background: white; width: 800px; padding: 35px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); transition: width 0.3s ease; }
-    #pdfContent.single-page-scaling { width: 100% !important; max-width: 1100px; padding: 15px; }
-    #pdfContent.single-page-scaling .pdf-page { page-break-after: avoid !important; break-after: avoid !important; margin-bottom: 15px; }
-    #pdfContent.single-page-scaling .calendar-grid { font-size: 0.8em; }
-    #pdfContent.single-page-scaling .day-cell { height: 48px; padding: 2px; }
-    #pdfContent.single-page-scaling .event-tag { font-size: 0.55rem; padding: 1px 3px; }
+    /* Schede Controllo */
+    .section-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
 
-    .pdf-page { page-break-after: always; break-after: page; margin-bottom: 30px; }
-    .pdf-page:last-child { page-break-after: auto; break-after: auto; margin-bottom: 0; }
+    h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-    /* Grid Layout View */
-    .month-header { text-align: center; font-size: 1.4rem; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; color: #0f172a; letter-spacing: 1px; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid #cbd5e1; border-left: 1px solid #cbd5e1; }
-    .day-header { background: #f1f5f9; text-align: center; font-weight: 700; padding: 6px 0; font-size: 0.75rem; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; color: #475569; }
-    .day-cell { height: 85px; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; padding: 3px; vertical-align: top; overflow: hidden; background: white; }
-    .day-number { font-size: 0.7rem; font-weight: 700; color: #64748b; margin-bottom: 3px; }
-    .event-tag { font-size: 0.65rem; color: white; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
 
-    /* Redesigned List Layout View */
-    .list-view-month { margin-bottom: 25px; page-break-inside: avoid; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .list-header-banner { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 8px 16px; font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; }
-    .list-header-banner .year-badge { background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 500; }
-    .list-events { list-style: none; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
-    .list-event-item { font-size: 0.88rem; display: flex; align-items: center; gap: 12px; padding: 6px 10px; border-radius: 6px; background: #f8fafc; border: 1px solid #edf2f7; }
-    .list-day-badge { background: #e2e8f0; color: #334155; font-weight: 700; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; min-width: 65px; text-align: center; }
-    .list-event-tag { font-weight: 600; padding: 4px 10px; border-radius: 4px; color: white; font-size: 0.82rem; flex: 1; display: flex; align-items: center; justify-content: space-between; }
-    .list-event-sector-sub { font-size: 0.7rem; opacity: 0.85; text-transform: uppercase; font-weight: 400; margin-left: 8px; }
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    input,
+    select,
+    button {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    input[type="color"] {
+      padding: 2px;
+      height: 36px;
+      cursor: pointer;
+    }
+
+    input[type="file"] {
+      background: white;
+      font-size: 0.8rem;
+    }
+
+    button {
+      cursor: pointer;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    button.secondary {
+      background-color: #64748b;
+    }
+
+    button.secondary:hover {
+      background-color: #475569;
+    }
+
+    button.danger {
+      background-color: #ef4444;
+    }
+
+    button.danger:hover {
+      background-color: #dc2626;
+    }
+
+    /* Legenda Categorie */
+    .sector-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+      max-height: 110px;
+      overflow-y: auto;
+    }
+
+    .sector-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: white;
+      border: 1px solid var(--border);
+      font-weight: 500;
+    }
+
+    .sector-chip-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sector-color-picker {
+      border: none;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+    }
+
+    .sector-color-picker::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .sector-color-picker::-webkit-color-swatch {
+      border: none;
+      border-radius: 50%;
+    }
+
+    /* Registro Eventi */
+    .event-list {
+      max-height: 150px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .event-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+
+    .event-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .event-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 170px;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 0 3px;
+      color: #64748b;
+    }
+
+    .action-btn.delete:hover {
+      color: #ef4444;
+    }
+
+    /* Area Anteprima Foglio A4 */
+    #pdfContent {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .pdf-page {
+      background: white;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      box-sizing: border-box;
+      padding: 12mm;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      page-break-after: always;
+      break-after: page;
+    }
+
+    .pdf-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    /* Dimensioni esatte A4 per anteprima fedele */
+    .pdf-page.portrait {
+      width: 210mm;
+      min-height: 297mm;
+    }
+
+    .pdf-page.landscape {
+      width: 297mm;
+      min-height: 210mm;
+    }
+
+    .page-watermark {
+      position: absolute;
+      top: 3mm;
+      right: 5mm;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Griglia Mesi Adattiva */
+    .months-grid {
+      display: grid;
+      gap: 8mm;
+      width: 100%;
+      height: 100%;
+      flex: 1;
+    }
+
+    /* Stili Grafica Calendario Singolo Mese */
+    .month-card {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .month-header {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      color: #0f172a;
+      letter-spacing: 0.5px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      border-top: 1px solid #cbd5e1;
+      border-left: 1px solid #cbd5e1;
+      height: 100%;
+    }
+
+    .day-header {
+      background: #f1f5f9;
+      text-align: center;
+      font-weight: 700;
+      padding: 4px 0;
+      font-size: 0.7rem;
+      border-right: 1px solid #cbd5e1;
+      border-bottom: 1px solid #cbd5e1;
+      color: #475569;
+    }
+
+    .day-cell {
+      border-right: 1px solid #cbd5e1;
+      border-bottom: 1px solid #cbd5e1;
+      padding: 2px;
+      vertical-align: top;
+      overflow: hidden;
+      background: white;
+      min-height: 40px;
+    }
+
+    .day-number {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+
+    .event-tag {
+      font-size: 0.6rem;
+      color: white;
+      padding: 1px 3px;
+      border-radius: 2px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+      line-height: 1.1;
+    }
+
+    /* Stili Grafica Vista Elenco Rinnovata */
+    .list-view-month {
+      background: #fff;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .list-header-banner {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: white;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .list-header-banner .year-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+
+    .list-events {
+      list-style: none;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .list-event-item {
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      background: #f8fafc;
+      border: 1px solid #edf2f7;
+    }
+
+    .list-day-badge {
+      background: #e2e8f0;
+      color: #334155;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .list-event-tag {
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: white;
+      font-size: 0.72rem;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .list-event-sector-sub {
+      font-size: 0.62rem;
+      opacity: 0.85;
+      text-transform: uppercase;
+      font-weight: 400;
+      margin-left: 6px;
+    }
+
+    /* Stili Compatti per Griglie Multi-Mese (Tutto in 1 Pagina o 2 Pagine) */
+    .pdf-page.compact .month-header {
+      font-size: 0.8rem;
+      margin-bottom: 2px;
+    }
+
+    .pdf-page.compact .day-header {
+      font-size: 0.55rem;
+      padding: 2px 0;
+    }
+
+    .pdf-page.compact .day-cell {
+      min-height: 22px;
+      padding: 1px;
+    }
+
+    .pdf-page.compact .day-number {
+      font-size: 0.5rem;
+      margin-bottom: 1px;
+    }
+
+    .pdf-page.compact .event-tag {
+      font-size: 0.48rem;
+      padding: 0 2px;
+      line-height: 1;
+      margin-bottom: 1px;
+    }
+
+    .pdf-page.compact .list-header-banner {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+    }
+
+    .pdf-page.compact .list-events {
+      padding: 4px;
+      gap: 3px;
+    }
+
+    .pdf-page.compact .list-event-item {
+      padding: 2px 4px;
+      font-size: 0.68rem;
+      gap: 4px;
+    }
+
+    .pdf-page.compact .list-day-badge {
+      font-size: 0.6rem;
+      padding: 1px 3px;
+      min-width: 40px;
+    }
+
+    .pdf-page.compact .list-event-tag {
+      font-size: 0.65rem;
+      padding: 1px 4px;
+    }
 
     @media print {
-      .sidebar { display: none; }
-      .main-preview { padding: 0; background: white; }
-      #pdfContent { box-shadow: none; width: 100%; }
+      .sidebar {
+        display: none;
+      }
+
+      .main-preview {
+        padding: 0;
+        background: white;
+      }
+
+      .pdf-page {
+        box-shadow: none;
+        margin: 0;
+      }
+
+      .page-watermark {
+        display: none;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <div class="app-container">
@@ -104,10 +535,10 @@
       <div class="section-card">
         <h2>1. Importa File</h2>
         <div class="form-group">
-          <label for="fileInput">Seleziona CSV o Excel (.xlsx)</label>
+          <label for="fileInput">File CSV o Excel (.xlsx)</label>
           <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" onchange="handleFileUpload(event)">
         </div>
-        <label style="margin-top:6px; display:block;">Categorie rilevate:</label>
+        <label style="margin-top:4px; display:block;">Categorie rilevate:</label>
         <div id="sectorLegend" class="sector-legend"></div>
       </div>
 
@@ -152,7 +583,8 @@
       <div class="section-card">
         <h2>
           Registro Eventi
-          <button type="button" class="danger" onclick="clearAllEvents()" style="font-size:0.7rem; padding: 2px 6px;">Elimina Tutti</button>
+          <button type="button" class="danger" onclick="clearAllEvents()"
+            style="font-size:0.7rem; padding: 2px 6px;">Elimina Tutti</button>
         </h2>
         <div class="event-list" id="eventListContainer"></div>
       </div>
@@ -161,7 +593,7 @@
       <div class="section-card">
         <h2>4. Opzioni Export PDF</h2>
         <div class="form-group">
-          <label for="viewMode">Formato Vista</label>
+          <label for="viewMode">Formato Vista Mesi</label>
           <select id="viewMode" onchange="updateCalendar()">
             <option value="grid">Griglia Classica</option>
             <option value="list">Vista Elenco Elegante</option>
@@ -170,25 +602,27 @@
         <div class="form-group">
           <label for="monthFilter">Mesi Inclusi</label>
           <select id="monthFilter" onchange="updateCalendar()">
-            <option value="all">Esporta Tutti i Mesi (12 Mesi)</option>
-            <option value="active" selected>Esporta Solo Mesi con Eventi</option>
+            <option value="all">Tutti i 12 Mesi</option>
+            <option value="active" selected>Solo Mesi con Eventi</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="singlePageOpt">Impaginazione PDF</label>
-          <select id="singlePageOpt" onchange="updateCalendar()">
-            <option value="multi">Una Pagina per Mese</option>
-            <option value="single">Tutto in 1 Singola Pagina (Scalato)</option>
+          <label for="pageLayoutOpt">Impaginazione PDF</label>
+          <select id="pageLayoutOpt" onchange="updateCalendar()">
+            <option value="single" selected>Tutto in 1 Singola Pagina (Griglia Adattiva)</option>
+            <option value="dual">2 Pagine (Libro - Sinistra / Destra)</option>
+            <option value="multi">1 Pagina per ogni Mese</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="pdfOrientation">Orientamento Pagina</label>
-          <select id="pdfOrientation">
+          <label for="pdfOrientation">Orientamento Foglio</label>
+          <select id="pdfOrientation" onchange="updateCalendar()">
+            <option value="landscape" selected>Orizzontale (Landscape - Consigliato)</option>
             <option value="portrait">Verticale (Portrait)</option>
-            <option value="landscape">Orizzontale (Landscape)</option>
           </select>
         </div>
-        <button onclick="exportToPDF()" style="width: 100%; padding: 10px; background-color: #16a34a; font-size: 0.9rem;">
+        <button onclick="exportToPDF()"
+          style="width: 100%; padding: 10px; background-color: #16a34a; font-size: 0.9rem; margin-top: 4px;">
           Scarica PDF
         </button>
       </div>
@@ -221,7 +655,7 @@
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = function(evt) {
+      reader.onload = function (evt) {
         const data = new Uint8Array(evt.target.result);
         const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
@@ -297,7 +731,6 @@
       return null;
     }
 
-    // Renderizza la legenda categorie con selettore colore dinamico
     function renderSectorLegend() {
       const container = document.getElementById('sectorLegend');
       container.innerHTML = '';
@@ -314,7 +747,6 @@
       });
     }
 
-    // Aggiorna il colore di tutta la categoria
     function updateCategoryColor(sector, newColor) {
       sectorColors[sector] = newColor;
       events.forEach(evt => {
@@ -389,8 +821,8 @@
     function renderEventList() {
       const container = document.getElementById('eventListContainer');
       container.innerHTML = '';
-      
-      const sorted = [...events].sort((a,b) => a.date.localeCompare(b.date));
+
+      const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
       sorted.forEach(evt => {
         const item = document.createElement('div');
         item.className = 'event-item';
@@ -411,19 +843,35 @@
       });
     }
 
+    // Calcolo dinamico Colonne x Righe per adattare i mesi alla pagina
+    function getGridDimensions(count, orientation) {
+      if (count === 12) {
+        return orientation === 'landscape' ? { cols: 4, rows: 3 } : { cols: 3, rows: 4 };
+      }
+      if (count <= 6) {
+        return orientation === 'landscape' ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
+      }
+      if (count <= 4) {
+        return { cols: 2, rows: 2 };
+      }
+      if (count <= 8) {
+        return orientation === 'landscape' ? { cols: 4, rows: 2 } : { cols: 2, rows: 4 };
+      }
+      let cols = orientation === 'landscape' ? Math.ceil(Math.sqrt(count * 1.3)) : Math.ceil(Math.sqrt(count * 0.75));
+      let rows = Math.ceil(count / cols);
+      return { cols, rows };
+    }
+
+    // Rendering principale del Calendario e Anteprima PDF
     function updateCalendar() {
       const year = parseInt(document.getElementById('yearInput').value) || 2026;
       const viewMode = document.getElementById('viewMode').value;
       const monthFilter = document.getElementById('monthFilter').value;
-      const isSinglePage = document.getElementById('singlePageOpt').value === 'single';
+      const pageLayout = document.getElementById('pageLayoutOpt').value;
+      const orientation = document.getElementById('pdfOrientation').value;
       const container = document.getElementById('pdfContent');
 
       container.innerHTML = '';
-      if (isSinglePage) {
-        container.classList.add('single-page-scaling');
-      } else {
-        container.classList.remove('single-page-scaling');
-      }
 
       let monthsToRender = [];
       for (let m = 0; m < 12; m++) {
@@ -435,25 +883,89 @@
       }
 
       if (monthsToRender.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #64748b;">Nessun evento trovato per l'anno ${year}.</div>`;
+        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #64748b; background: white; border-radius: 8px;">Nessun evento trovato per l'anno ${year}.</div>`;
         return;
       }
 
-      if (viewMode === 'grid') {
-        monthsToRender.forEach(m => container.appendChild(createGridMonth(year, m)));
-      } else {
-        monthsToRender.forEach(m => container.appendChild(createListMonth(year, m)));
+      // 1. MODALITÀ MULTI-PAGINA (1 pagina per ogni mese)
+      if (pageLayout === 'multi') {
+        monthsToRender.forEach(m => {
+          const page = createPdfPage(orientation, false, `Mese: ${monthNames[m]}`);
+          const monthNode = viewMode === 'grid' ? createGridMonth(year, m) : createListMonth(year, m);
+          page.appendChild(monthNode);
+          container.appendChild(page);
+        });
+      }
+      // 2. MODALITÀ SINGOLA PAGINA (Griglia 4x3 / 3x4 o adattiva)
+      else if (pageLayout === 'single') {
+        const page = createPdfPage(orientation, true, "Pagina Unica - Calendario Completo");
+        const gridContainer = createMonthsGridContainer(monthsToRender.length, orientation);
+
+        monthsToRender.forEach(m => {
+          const monthNode = viewMode === 'grid' ? createGridMonth(year, m) : createListMonth(year, m);
+          gridContainer.appendChild(monthNode);
+        });
+
+        page.appendChild(gridContainer);
+        container.appendChild(page);
+      }
+      // 3. MODALITÀ DOPPIA PAGINA LIBRO (Pagina Sinistra & Pagina Destra)
+      else if (pageLayout === 'dual') {
+        const halfCount = Math.ceil(monthsToRender.length / 2);
+        const leftMonths = monthsToRender.slice(0, halfCount);
+        const rightMonths = monthsToRender.slice(halfCount);
+
+        // Pagina 1: Sinistra
+        const page1 = createPdfPage(orientation, true, "Pagina 1 (Sinistra)");
+        const grid1 = createMonthsGridContainer(leftMonths.length, orientation);
+        leftMonths.forEach(m => {
+          grid1.appendChild(viewMode === 'grid' ? createGridMonth(year, m) : createListMonth(year, m));
+        });
+        page1.appendChild(grid1);
+        container.appendChild(page1);
+
+        // Pagina 2: Destra
+        if (rightMonths.length > 0) {
+          const page2 = createPdfPage(orientation, true, "Pagina 2 (Destra)");
+          const grid2 = createMonthsGridContainer(rightMonths.length, orientation);
+          rightMonths.forEach(m => {
+            grid2.appendChild(viewMode === 'grid' ? createGridMonth(year, m) : createListMonth(year, m));
+          });
+          page2.appendChild(grid2);
+          container.appendChild(page2);
+        }
       }
     }
 
-    function createGridMonth(year, month) {
+    function createPdfPage(orientation, isCompact, watermarkText) {
       const page = document.createElement('div');
-      page.className = 'pdf-page';
+      page.className = `pdf-page ${orientation} ${isCompact ? 'compact' : ''}`;
+
+      const watermark = document.createElement('div');
+      watermark.className = 'page-watermark';
+      watermark.innerText = watermarkText;
+      page.appendChild(watermark);
+
+      return page;
+    }
+
+    function createMonthsGridContainer(count, orientation) {
+      const grid = document.createElement('div');
+      grid.className = 'months-grid';
+      const dims = getGridDimensions(count, orientation);
+      grid.style.gridTemplateColumns = `repeat(${dims.cols}, 1fr)`;
+      grid.style.gridTemplateRows = `repeat(${dims.rows}, 1fr)`;
+      return grid;
+    }
+
+    function createGridMonth(year, month) {
+      const card = document.createElement('div');
+      card.className = 'month-card';
 
       const header = document.createElement('div');
       header.className = 'month-header';
       header.innerText = `${monthNames[month]} ${year}`;
-      page.appendChild(header);
+      card.appendChild(header);
 
       const grid = document.createElement('div');
       grid.className = 'calendar-grid';
@@ -498,18 +1010,18 @@
         grid.appendChild(cell);
       }
 
-      page.appendChild(grid);
-      return page;
+      card.appendChild(grid);
+      return card;
     }
 
     function createListMonth(year, month) {
-      const page = document.createElement('div');
-      page.className = 'list-view-month';
+      const card = document.createElement('div');
+      card.className = 'list-view-month';
 
       const monthStr = String(month + 1).padStart(2, '0');
       const monthEvents = events
         .filter(e => e.date.startsWith(`${year}-${monthStr}`))
-        .sort((a,b) => a.date.localeCompare(b.date));
+        .sort((a, b) => a.date.localeCompare(b.date));
 
       const header = document.createElement('div');
       header.className = 'list-header-banner';
@@ -517,7 +1029,7 @@
         <span>${monthNames[month]}</span>
         <span class="year-badge">${year}</span>
       `;
-      page.appendChild(header);
+      card.appendChild(header);
 
       const list = document.createElement('ul');
       list.className = 'list-events';
@@ -525,9 +1037,9 @@
       if (monthEvents.length === 0) {
         const emptyLi = document.createElement('li');
         emptyLi.style.color = '#94a3b8';
-        emptyLi.style.fontSize = '0.85rem';
-        emptyLi.style.padding = '8px';
-        emptyLi.innerText = 'Nessun evento in programma';
+        emptyLi.style.fontSize = '0.75rem';
+        emptyLi.style.padding = '4px';
+        emptyLi.innerText = 'Nessun evento';
         list.appendChild(emptyLi);
       } else {
         monthEvents.forEach(evt => {
@@ -548,26 +1060,27 @@
         });
       }
 
-      page.appendChild(list);
-      return page;
+      card.appendChild(list);
+      return card;
     }
 
     function exportToPDF() {
       const element = document.getElementById('pdfContent');
       const year = document.getElementById('yearInput').value;
       const orientation = document.getElementById('pdfOrientation').value;
-      const isSinglePage = document.getElementById('singlePageOpt').value === 'single';
+      const pageLayout = document.getElementById('pageLayoutOpt').value;
 
       const opt = {
-        margin:       isSinglePage ? 4 : 8,
-        filename:     `Calendario_${year}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: orientation }
+        margin: pageLayout === 'multi' ? 8 : 4,
+        filename: `Calendario_${year}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: orientation }
       };
 
       html2pdf().set(opt).from(element).save();
     }
   </script>
 </body>
+
 </html>
