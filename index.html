@@ -392,10 +392,11 @@
     }
 
     .page-pdf-legend-color {
-      width: 10px;
+      width: 100px;
       height: 10px;
       border-radius: 3px;
       display: inline-block;
+      width: 10px;
     }
 
     /* Griglia Mesi Adattiva */
@@ -736,11 +737,13 @@
           </select>
         </div>
 
-        <!-- Opzione Divisione Anno per Layout 2 Pagine -->
+        <!-- Opzioni Divisione Avanzata -->
         <div class="form-group" id="splitYearGroup" style="display:none;">
           <label for="splitYearOpt">Modalità Divisione 2 Pagine</label>
           <select id="splitYearOpt" onchange="updateCalendar()">
-            <option value="chronological" selected>Sequenziale (50% Mesi / 50% Mesi)</option>
+            <option value="split_years" selected>Dividi per Anno (Pagina 1: Primo Anno / Pagina 2: Secondo Anno)
+            </option>
+            <option value="chronological">Sequenziale (50% Mesi / 50% Mesi)</option>
             <option value="split_semesters">Dividi Semestri (Gen-Giun / Lug-Dic)</option>
           </select>
         </div>
@@ -1166,7 +1169,6 @@
       return { cols, rows };
     }
 
-    // Calcola il peso relativo di ogni mese in base agli eventi presenti
     function getMonthEventCount(year, month) {
       const monthStr = String(month + 1).padStart(2, '0');
       return events.filter(e => e.date.startsWith(`${year}-${monthStr}`)).length;
@@ -1183,7 +1185,6 @@
             if (count > maxEventsInRow) maxEventsInRow = count;
           }
         }
-        // Assegna un peso minimo (1) e scala in base ai mesi con più densità
         rowWeights.push(1 + (maxEventsInRow * 0.35));
       }
       return rowWeights;
@@ -1281,7 +1282,20 @@
         let leftItems = [];
         let rightItems = [];
 
-        if (splitYearOpt === 'split_semesters') {
+        if (splitYearOpt === 'split_years') {
+          // Divisione rigorosa per anno solare
+          const uniqueYearsInDataset = [...new Set(itemsToRender.map(i => i.year))].sort();
+          if (uniqueYearsInDataset.length >= 2) {
+            const firstYear = uniqueYearsInDataset[0];
+            leftItems = itemsToRender.filter(item => item.year === firstYear);
+            rightItems = itemsToRender.filter(item => item.year > firstYear);
+          } else {
+            // Se c'è solo un anno, dividi gli elementi a metà
+            const halfCount = Math.ceil(itemsToRender.length / 2);
+            leftItems = itemsToRender.slice(0, halfCount);
+            rightItems = itemsToRender.slice(halfCount);
+          }
+        } else if (splitYearOpt === 'split_semesters') {
           // Divisione Semestrale (Gen-Giun / Lug-Dic)
           leftItems = itemsToRender.filter(item => item.month <= 5);
           rightItems = itemsToRender.filter(item => item.month > 5);
@@ -1293,7 +1307,8 @@
         }
 
         if (leftItems.length > 0) {
-          const page1 = createPdfPage(orientation, true, "Pagina 1 (Sinistra / Semestre 1)", "left");
+          const yearLabel = leftItems[0] ? leftItems[0].year : '';
+          const page1 = createPdfPage(orientation, true, `Pagina 1 (Sinistra) ${yearLabel ? '- Anno ' + yearLabel : ''}`, "left");
           renderPdfPageLegend(page1, leftItems);
           const grid1 = createMonthsGridContainer(leftItems, orientation);
           leftItems.forEach(item => {
@@ -1304,7 +1319,8 @@
         }
 
         if (rightItems.length > 0) {
-          const page2 = createPdfPage(orientation, true, "Pagina 2 (Destra / Semestre 2)", "right");
+          const yearLabel = rightItems[0] ? rightItems[0].year : '';
+          const page2 = createPdfPage(orientation, true, `Pagina 2 (Destra) ${yearLabel ? '- Anno ' + yearLabel : ''}`, "right");
           renderPdfPageLegend(page2, rightItems);
           const grid2 = createMonthsGridContainer(rightItems, orientation);
           rightItems.forEach(item => {
@@ -1328,7 +1344,6 @@
       return page;
     }
 
-    // Costruisce una griglia CSS con `grid-template-rows` dinamiche proporzionali alla densità di eventi
     function createMonthsGridContainer(items, orientation) {
       const grid = document.createElement('div');
       grid.className = 'months-grid';
