@@ -55,7 +55,6 @@
       flex-shrink: 0;
     }
 
-    /* Correzione Taglio Orizzontale Anteprima */
     .main-preview {
       flex: 1;
       padding: 30px;
@@ -70,7 +69,6 @@
       width: 100%;
     }
 
-    /* Supporto Schermi Piccoli (Media Query) */
     @media (max-width: 1100px) {
       body {
         overflow: auto;
@@ -223,6 +221,36 @@
       border-radius: 50%;
     }
 
+    /* Azioni In Massa per Anni */
+    .bulk-years-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 120px;
+      overflow-y: auto;
+      margin-bottom: 8px;
+    }
+
+    .year-checkbox-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      background: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .year-checkbox-item label {
+      font-weight: 500;
+      cursor: pointer;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     /* Registro Eventi */
     .event-list {
       max-height: 150px;
@@ -319,7 +347,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* SPECULAR / LIBRO LAYOUT (PAGINA SINISTRA vs DESTRA) */
+    /* SPECULAR / LIBRO LAYOUT */
     .pdf-page.page-left {
       padding-right: 18mm;
       padding-left: 8mm;
@@ -338,14 +366,6 @@
     .pdf-page.page-right .page-watermark {
       right: 6mm;
       left: auto;
-    }
-
-    .pdf-page.page-right .list-header-banner {
-      flex-direction: row-reverse;
-    }
-
-    .pdf-page.page-right .list-event-item {
-      flex-direction: row-reverse;
     }
 
     /* Griglia Mesi Adattiva */
@@ -591,28 +611,35 @@
 <body>
 
   <div class="app-container">
-    <!-- Barra Laterale Controlli -->
     <div class="sidebar">
 
-      <!-- 1. Importa File -->
+      <!-- 1. Importa File Multipli -->
       <div class="section-card">
-        <h2>1. Importa File</h2>
+        <h2>1. Importa File Multipli</h2>
         <div class="form-group">
-          <label for="fileInput">File CSV, Excel (.xlsx) o Google Calendar (.ics)</label>
-          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .ics" onchange="handleFileUpload(event)">
+          <label for="fileInput">Seleziona uno o più file (.ics, .csv, .xlsx)</label>
+          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .ics" multiple
+            onchange="handleMultipleFileUpload(event)">
         </div>
         <label style="margin-top:4px; display:block;">Categorie rilevate:</label>
         <div id="sectorLegend" class="sector-legend"></div>
       </div>
 
-      <!-- 2. Anno Calendario (ADATTIVO) -->
+      <!-- 2. Anno Calendario & Gestione In Massa Anni -->
       <div class="section-card">
-        <h2>2. Anno Calendario</h2>
+        <h2>2. Filtro Anno & Azioni In Massa</h2>
         <div class="form-group">
-          <label for="yearSelect">Filtro Anno / Eventi</label>
+          <label for="yearSelect">Filtro Anno Visualizzato</label>
           <select id="yearSelect" onchange="updateCalendar()"></select>
         </div>
-        <div id="yearInfo" style="font-size:0.75rem; color:#64748b; font-weight:500;"></div>
+        <div id="yearInfo" style="font-size:0.75rem; color:#64748b; font-weight:500; margin-bottom: 8px;"></div>
+
+        <label>Eliminazione per Anno:</label>
+        <div id="bulkYearsContainer" class="bulk-years-list"></div>
+        <button type="button" class="danger" onclick="deleteSelectedYears()"
+          style="width:100%; font-size:0.78rem; padding:6px;">
+          Elimina Anni Selezionati
+        </button>
       </div>
 
       <!-- 3. Aggiungi / Modifica Evento -->
@@ -700,7 +727,6 @@
   </div>
 
   <script>
-    // Stato dell'applicazione
     let events = [];
     let sectorColors = {};
 
@@ -754,99 +780,106 @@
           ? `Anni rilevati: ${years.join(', ')}`
           : 'Nessun evento presente';
       }
+
+      renderBulkYearsList(years);
     }
 
-    // Gestione Caricamento File (ICS, CSV, XLSX)
-    function handleFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    function renderBulkYearsList(years) {
+      const container = document.getElementById('bulkYearsContainer');
+      container.innerHTML = '';
+      if (years.length === 0) {
+        container.innerHTML = `<span style="font-size:0.75rem; color:#94a3b8;">Nessun anno caricato.</span>`;
+        return;
+      }
 
-      const fileName = file.name.toLowerCase();
+      years.forEach(yr => {
+        const count = events.filter(e => e.date.startsWith(yr)).length;
+        const item = document.createElement('div');
+        item.className = 'year-checkbox-item';
+        item.innerHTML = `
+          <label>
+            <input type="checkbox" value="${yr}" class="year-bulk-checkbox">
+            <span>Anno ${yr}</span>
+          </label>
+          <span style="font-size:0.7rem; color:#64748b;">${count} ev.</span>
+        `;
+        container.appendChild(item);
+      });
+    }
 
-      if (fileName.endsWith('.ics')) {
-        const reader = new FileReader();
-        reader.onload = function (evt) {
-          const text = evt.target.result;
-          const parsedEvents = parseICS(text);
-          if (parsedEvents.length > 0) {
-            events = parsedEvents;
-            updateYearOptions();
-            renderSectorLegend();
-            renderEventList();
-            updateCalendar();
-          } else {
-            alert("Nessun evento valido trovato nel file ICS di Google Calendar.");
-          }
-        };
-        reader.readAsText(file);
-      } else {
-        const reader = new FileReader();
-        reader.onload = function (evt) {
-          const data = new Uint8Array(evt.target.result);
-          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+    function deleteSelectedYears() {
+      const checkboxes = document.querySelectorAll('.year-bulk-checkbox:checked');
+      const selectedYears = Array.from(checkboxes).map(cb => cb.value);
 
-          let importedEvents = [];
-          sectorColors = {};
-          let paletteIndex = 0;
+      if (selectedYears.length === 0) {
+        alert("Seleziona almeno un anno da eliminare.");
+        return;
+      }
 
-          workbook.SheetNames.forEach(sheetName => {
-            if (sheetName.toLowerCase() === 'summary' || sheetName.toLowerCase() === 'indice') return;
-
-            const sheet = workbook.Sheets[sheetName];
-            const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
-            jsonRows.forEach(row => {
-              const title = row.Summary || row.Subject || row.Title || row.Event || row.Name || row.Titolo || row.Oggetto;
-              if (!title) return;
-
-              let rawDate = row.Start || row['Start Date'] || row.DTSTART || row.Date || row.Data;
-              if (!rawDate) return;
-
-              let formattedDate = parseRawDate(rawDate);
-              if (!formattedDate) return;
-
-              let sector = row.Calendar || row.Sector || row.Category || row.Categoria || row.Settore || sheetName;
-              if (typeof sector === 'string' && sector.includes('_')) {
-                sector = sector.split('_')[0];
-              }
-              if (!sector) sector = 'Generale';
-
-              if (!sectorColors[sector]) {
-                sectorColors[sector] = defaultPalette[paletteIndex % defaultPalette.length];
-                paletteIndex++;
-              }
-
-              importedEvents.push({
-                id: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
-                title: String(title).trim(),
-                date: formattedDate,
-                color: sectorColors[sector],
-                sector: sector
-              });
-            });
-          });
-
-          if (importedEvents.length > 0) {
-            events = importedEvents;
-            updateYearOptions();
-            renderSectorLegend();
-            renderEventList();
-            updateCalendar();
-          } else {
-            alert("Nessun evento valido trovato nel file caricato.");
-          }
-        };
-        reader.readAsArrayBuffer(file);
+      if (confirm(`Sei sicuro di voler eliminare gli eventi per gli anni: ${selectedYears.join(', ')}?`)) {
+        events = events.filter(e => !selectedYears.includes(e.date.split('-')[0]));
+        updateYearOptions();
+        renderEventList();
+        updateCalendar();
       }
     }
 
-    // Parser iCalendar (.ics Google Calendar)
-    function parseICS(icsText) {
-      const parsedEvents = [];
-      sectorColors = {};
-      let paletteIndex = 0;
+    // Supporto per Caricamento Multi-File
+    async function handleMultipleFileUpload(e) {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
 
-      // Dispiega righe spezzate RFC 5545
+      let newEvents = [];
+      let paletteIndex = Object.keys(sectorColors).length;
+
+      for (let file of files) {
+        const fileName = file.name.toLowerCase();
+
+        if (fileName.endsWith('.ics')) {
+          const text = await readFileAsText(file);
+          const parsed = parseICS(text, paletteIndex);
+          newEvents.push(...parsed.events);
+          paletteIndex = parsed.nextPaletteIndex;
+        } else {
+          const buffer = await readFileAsArrayBuffer(file);
+          const parsed = parseExcelOrCSV(buffer, paletteIndex);
+          newEvents.push(...parsed.events);
+          paletteIndex = parsed.nextPaletteIndex;
+        }
+      }
+
+      if (newEvents.length > 0) {
+        events = [...events, ...newEvents];
+        updateYearOptions();
+        renderSectorLegend();
+        renderEventList();
+        updateCalendar();
+      } else {
+        alert("Nessun evento valido trovato nei file selezionati.");
+      }
+      e.target.value = '';
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsText(file);
+      });
+    }
+
+    function readFileAsArrayBuffer(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(new Uint8Array(e.target.result));
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function parseICS(icsText, startPaletteIndex) {
+      const parsedEvents = [];
+      let paletteIndex = startPaletteIndex;
+
       const unfolded = icsText.replace(/\r?\n[ \t]/g, '');
       const vevents = unfolded.split('BEGIN:VEVENT');
 
@@ -890,7 +923,52 @@
         }
       }
 
-      return parsedEvents;
+      return { events: parsedEvents, nextPaletteIndex: paletteIndex };
+    }
+
+    function parseExcelOrCSV(dataBuffer, startPaletteIndex) {
+      const workbook = XLSX.read(dataBuffer, { type: 'array', cellDates: true });
+      let importedEvents = [];
+      let paletteIndex = startPaletteIndex;
+
+      workbook.SheetNames.forEach(sheetName => {
+        if (sheetName.toLowerCase() === 'summary' || sheetName.toLowerCase() === 'indice') return;
+
+        const sheet = workbook.Sheets[sheetName];
+        const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+        jsonRows.forEach(row => {
+          const title = row.Summary || row.Subject || row.Title || row.Event || row.Name || row.Titolo || row.Oggetto;
+          if (!title) return;
+
+          let rawDate = row.Start || row['Start Date'] || row.DTSTART || row.Date || row.Data;
+          if (!rawDate) return;
+
+          let formattedDate = parseRawDate(rawDate);
+          if (!formattedDate) return;
+
+          let sector = row.Calendar || row.Sector || row.Category || row.Categoria || row.Settore || sheetName;
+          if (typeof sector === 'string' && sector.includes('_')) {
+            sector = sector.split('_')[0];
+          }
+          if (!sector) sector = 'Generale';
+
+          if (!sectorColors[sector]) {
+            sectorColors[sector] = defaultPalette[paletteIndex % defaultPalette.length];
+            paletteIndex++;
+          }
+
+          importedEvents.push({
+            id: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
+            title: String(title).trim(),
+            date: formattedDate,
+            color: sectorColors[sector],
+            sector: sector
+          });
+        });
+      });
+
+      return { events: importedEvents, nextPaletteIndex: paletteIndex };
     }
 
     function parseRawDate(raw) {
@@ -1043,7 +1121,6 @@
       return { cols, rows };
     }
 
-    // Rendering principale del Calendario
     function updateCalendar() {
       const selectedYearOpt = document.getElementById('yearSelect').value;
       const viewMode = document.getElementById('viewMode').value;
@@ -1106,7 +1183,6 @@
         const leftItems = itemsToRender.slice(0, halfCount);
         const rightItems = itemsToRender.slice(halfCount);
 
-        // Pagina 1 (Sinistra)
         const page1 = createPdfPage(orientation, true, "Pagina 1 (Sinistra)", "left");
         const grid1 = createMonthsGridContainer(leftItems.length, orientation);
         leftItems.forEach(item => {
@@ -1115,7 +1191,6 @@
         page1.appendChild(grid1);
         container.appendChild(page1);
 
-        // Pagina 2 (Destra Speculare)
         if (rightItems.length > 0) {
           const page2 = createPdfPage(orientation, true, "Pagina 2 (Destra)", "right");
           const grid2 = createMonthsGridContainer(rightItems.length, orientation);
