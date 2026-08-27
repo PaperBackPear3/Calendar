@@ -174,7 +174,7 @@
       background-color: #dc2626;
     }
 
-    /* Legenda Categorie */
+    /* Legenda Categorie Sidebar */
     .sector-legend {
       display: flex;
       flex-direction: column;
@@ -221,7 +221,7 @@
       border-radius: 50%;
     }
 
-    /* Azioni In Massa per Anni */
+    /* Azioni In Massa Anni */
     .bulk-years-list {
       display: flex;
       flex-direction: column;
@@ -312,7 +312,7 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
       border-radius: 4px;
       box-sizing: border-box;
-      padding: 12mm;
+      padding: 10mm;
       position: relative;
       display: flex;
       flex-direction: column;
@@ -347,7 +347,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* SPECULAR / LIBRO LAYOUT */
+    /* SPECULAR LAYOUT */
     .pdf-page.page-left {
       padding-right: 18mm;
       padding-left: 8mm;
@@ -368,10 +368,40 @@
       left: auto;
     }
 
+    /* LEGENDA NELLA PAGINA PDF */
+    .page-pdf-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 6px 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-bottom: 8mm;
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    .page-pdf-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .page-pdf-legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
     /* Griglia Mesi Adattiva */
     .months-grid {
       display: grid;
-      gap: 8mm;
+      gap: 6mm;
       width: 100%;
       height: 100%;
       flex: 1;
@@ -382,13 +412,14 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      height: 100%;
     }
 
     .month-header {
       text-align: center;
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 700;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       text-transform: uppercase;
       color: #0f172a;
       letter-spacing: 0.5px;
@@ -400,14 +431,15 @@
       border-top: 1px solid #cbd5e1;
       border-left: 1px solid #cbd5e1;
       height: 100%;
+      flex: 1;
     }
 
     .day-header {
       background: #f1f5f9;
       text-align: center;
       font-weight: 700;
-      padding: 4px 0;
-      font-size: 0.7rem;
+      padding: 2px 0;
+      font-size: 0.65rem;
       border-right: 1px solid #cbd5e1;
       border-bottom: 1px solid #cbd5e1;
       color: #475569;
@@ -420,7 +452,6 @@
       vertical-align: top;
       overflow: hidden;
       background: white;
-      min-height: 40px;
     }
 
     .day-number {
@@ -431,7 +462,7 @@
     }
 
     .event-tag {
-      font-size: 0.6rem;
+      font-size: 0.58rem;
       color: white;
       padding: 1px 3px;
       border-radius: 2px;
@@ -458,7 +489,7 @@
       background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
       color: white;
       padding: 6px 12px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -471,7 +502,7 @@
       background: rgba(255, 255, 255, 0.2);
       padding: 1px 6px;
       border-radius: 10px;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 500;
     }
 
@@ -480,17 +511,17 @@
       padding: 6px 8px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 4px;
       overflow-y: auto;
       flex: 1;
     }
 
     .list-event-item {
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 4px 6px;
+      padding: 3px 5px;
       border-radius: 4px;
       background: #f8fafc;
       border: 1px solid #edf2f7;
@@ -500,10 +531,10 @@
       background: #e2e8f0;
       color: #334155;
       font-weight: 700;
-      padding: 2px 5px;
+      padding: 2px 4px;
       border-radius: 3px;
-      font-size: 0.7rem;
-      min-width: 50px;
+      font-size: 0.68rem;
+      min-width: 45px;
       text-align: center;
     }
 
@@ -512,7 +543,7 @@
       padding: 2px 6px;
       border-radius: 3px;
       color: white;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       flex: 1;
       display: flex;
       align-items: center;
@@ -523,7 +554,7 @@
     }
 
     .list-event-sector-sub {
-      font-size: 0.62rem;
+      font-size: 0.6rem;
       opacity: 0.85;
       text-transform: uppercase;
       font-weight: 400;
@@ -532,17 +563,16 @@
 
     /* Stili Compatti per Griglie Multi-Mese */
     .pdf-page.compact .month-header {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       margin-bottom: 2px;
     }
 
     .pdf-page.compact .day-header {
       font-size: 0.55rem;
-      padding: 2px 0;
+      padding: 1px 0;
     }
 
     .pdf-page.compact .day-cell {
-      min-height: 22px;
       padding: 1px;
     }
 
@@ -552,7 +582,7 @@
     }
 
     .pdf-page.compact .event-tag {
-      font-size: 0.48rem;
+      font-size: 0.46rem;
       padding: 0 2px;
       line-height: 1;
       margin-bottom: 1px;
@@ -560,7 +590,7 @@
 
     .pdf-page.compact .list-header-banner {
       padding: 4px 8px;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
     }
 
     .pdf-page.compact .list-events {
@@ -570,18 +600,18 @@
 
     .pdf-page.compact .list-event-item {
       padding: 2px 4px;
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       gap: 4px;
     }
 
     .pdf-page.compact .list-day-badge {
-      font-size: 0.6rem;
+      font-size: 0.58rem;
       padding: 1px 3px;
-      min-width: 40px;
+      min-width: 38px;
     }
 
     .pdf-page.compact .list-event-tag {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       padding: 1px 4px;
     }
 
@@ -699,12 +729,22 @@
         </div>
         <div class="form-group">
           <label for="pageLayoutOpt">Impaginazione PDF</label>
-          <select id="pageLayoutOpt" onchange="updateCalendar()">
-            <option value="single" selected>Tutto in 1 Singola Pagina (Griglia Adattiva)</option>
-            <option value="dual">2 Pagine Speculari (Libro - Sinistra / Destra)</option>
+          <select id="pageLayoutOpt" onchange="toggleSplitOption(); updateCalendar();">
+            <option value="single" selected>Tutto in 1 Singola Pagina</option>
+            <option value="dual">2 Pagine Speculari (Libro)</option>
             <option value="multi">1 Pagina per ogni Mese</option>
           </select>
         </div>
+
+        <!-- Opzione Divisione Anno per Layout 2 Pagine -->
+        <div class="form-group" id="splitYearGroup" style="display:none;">
+          <label for="splitYearOpt">Modalità Divisione 2 Pagine</label>
+          <select id="splitYearOpt" onchange="updateCalendar()">
+            <option value="chronological" selected>Sequenziale (50% Mesi / 50% Mesi)</option>
+            <option value="split_semesters">Dividi Semestri (Gen-Giun / Lug-Dic)</option>
+          </select>
+        </div>
+
         <div class="form-group">
           <label for="pdfOrientation">Orientamento Foglio</label>
           <select id="pdfOrientation" onchange="updateCalendar()">
@@ -739,6 +779,12 @@
       renderEventList();
       updateCalendar();
     });
+
+    function toggleSplitOption() {
+      const layout = document.getElementById('pageLayoutOpt').value;
+      const splitGroup = document.getElementById('splitYearGroup');
+      splitGroup.style.display = (layout === 'dual') ? 'flex' : 'none';
+    }
 
     function updateYearOptions() {
       const select = document.getElementById('yearSelect');
@@ -824,7 +870,6 @@
       }
     }
 
-    // Supporto per Caricamento Multi-File
     async function handleMultipleFileUpload(e) {
       const files = Array.from(e.target.files);
       if (!files.length) return;
@@ -1121,11 +1166,63 @@
       return { cols, rows };
     }
 
+    // Calcola il peso relativo di ogni mese in base agli eventi presenti
+    function getMonthEventCount(year, month) {
+      const monthStr = String(month + 1).padStart(2, '0');
+      return events.filter(e => e.date.startsWith(`${year}-${monthStr}`)).length;
+    }
+
+    function buildRowWeights(items, cols, rows) {
+      const rowWeights = [];
+      for (let r = 0; r < rows; r++) {
+        let maxEventsInRow = 0;
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          if (idx < items.length) {
+            const count = getMonthEventCount(items[idx].year, items[idx].month);
+            if (count > maxEventsInRow) maxEventsInRow = count;
+          }
+        }
+        // Assegna un peso minimo (1) e scala in base ai mesi con più densità
+        rowWeights.push(1 + (maxEventsInRow * 0.35));
+      }
+      return rowWeights;
+    }
+
+    function renderPdfPageLegend(pageElement, visibleItems) {
+      const usedSectors = new Set();
+      visibleItems.forEach(item => {
+        const monthStr = String(item.month + 1).padStart(2, '0');
+        events.filter(e => e.date.startsWith(`${item.year}-${monthStr}`)).forEach(e => {
+          if (e.sector) usedSectors.add(e.sector);
+        });
+      });
+
+      if (usedSectors.size === 0) return;
+
+      const legendNode = document.createElement('div');
+      legendNode.className = 'page-pdf-legend';
+
+      usedSectors.forEach(sec => {
+        const color = sectorColors[sec] || '#2563eb';
+        const item = document.createElement('div');
+        item.className = 'page-pdf-legend-item';
+        item.innerHTML = `
+          <span class="page-pdf-legend-color" style="background-color: ${color}"></span>
+          <span>${sec}</span>
+        `;
+        legendNode.appendChild(item);
+      });
+
+      pageElement.appendChild(legendNode);
+    }
+
     function updateCalendar() {
       const selectedYearOpt = document.getElementById('yearSelect').value;
       const viewMode = document.getElementById('viewMode').value;
       const monthFilter = document.getElementById('monthFilter').value;
       const pageLayout = document.getElementById('pageLayoutOpt').value;
+      const splitYearOpt = document.getElementById('splitYearOpt').value;
       const orientation = document.getElementById('pdfOrientation').value;
       const container = document.getElementById('pdfContent');
 
@@ -1161,6 +1258,7 @@
       if (pageLayout === 'multi') {
         itemsToRender.forEach(item => {
           const page = createPdfPage(orientation, false, `Mese: ${monthNames[item.month]} ${item.year}`);
+          renderPdfPageLegend(page, [item]);
           const monthNode = viewMode === 'grid' ? createGridMonth(item.year, item.month) : createListMonth(item.year, item.month);
           page.appendChild(monthNode);
           container.appendChild(page);
@@ -1168,7 +1266,8 @@
       }
       else if (pageLayout === 'single') {
         const page = createPdfPage(orientation, true, "Pagina Unica - Calendario Completo");
-        const gridContainer = createMonthsGridContainer(itemsToRender.length, orientation);
+        renderPdfPageLegend(page, itemsToRender);
+        const gridContainer = createMonthsGridContainer(itemsToRender, orientation);
 
         itemsToRender.forEach(item => {
           const monthNode = viewMode === 'grid' ? createGridMonth(item.year, item.month) : createListMonth(item.year, item.month);
@@ -1179,21 +1278,35 @@
         container.appendChild(page);
       }
       else if (pageLayout === 'dual') {
-        const halfCount = Math.ceil(itemsToRender.length / 2);
-        const leftItems = itemsToRender.slice(0, halfCount);
-        const rightItems = itemsToRender.slice(halfCount);
+        let leftItems = [];
+        let rightItems = [];
 
-        const page1 = createPdfPage(orientation, true, "Pagina 1 (Sinistra)", "left");
-        const grid1 = createMonthsGridContainer(leftItems.length, orientation);
-        leftItems.forEach(item => {
-          grid1.appendChild(viewMode === 'grid' ? createGridMonth(item.year, item.month) : createListMonth(item.year, item.month));
-        });
-        page1.appendChild(grid1);
-        container.appendChild(page1);
+        if (splitYearOpt === 'split_semesters') {
+          // Divisione Semestrale (Gen-Giun / Lug-Dic)
+          leftItems = itemsToRender.filter(item => item.month <= 5);
+          rightItems = itemsToRender.filter(item => item.month > 5);
+        } else {
+          // Divisione Sequenziale Bilanciata
+          const halfCount = Math.ceil(itemsToRender.length / 2);
+          leftItems = itemsToRender.slice(0, halfCount);
+          rightItems = itemsToRender.slice(halfCount);
+        }
+
+        if (leftItems.length > 0) {
+          const page1 = createPdfPage(orientation, true, "Pagina 1 (Sinistra / Semestre 1)", "left");
+          renderPdfPageLegend(page1, leftItems);
+          const grid1 = createMonthsGridContainer(leftItems, orientation);
+          leftItems.forEach(item => {
+            grid1.appendChild(viewMode === 'grid' ? createGridMonth(item.year, item.month) : createListMonth(item.year, item.month));
+          });
+          page1.appendChild(grid1);
+          container.appendChild(page1);
+        }
 
         if (rightItems.length > 0) {
-          const page2 = createPdfPage(orientation, true, "Pagina 2 (Destra)", "right");
-          const grid2 = createMonthsGridContainer(rightItems.length, orientation);
+          const page2 = createPdfPage(orientation, true, "Pagina 2 (Destra / Semestre 2)", "right");
+          renderPdfPageLegend(page2, rightItems);
+          const grid2 = createMonthsGridContainer(rightItems, orientation);
           rightItems.forEach(item => {
             grid2.appendChild(viewMode === 'grid' ? createGridMonth(item.year, item.month) : createListMonth(item.year, item.month));
           });
@@ -1215,12 +1328,15 @@
       return page;
     }
 
-    function createMonthsGridContainer(count, orientation) {
+    // Costruisce una griglia CSS con `grid-template-rows` dinamiche proporzionali alla densità di eventi
+    function createMonthsGridContainer(items, orientation) {
       const grid = document.createElement('div');
       grid.className = 'months-grid';
-      const dims = getGridDimensions(count, orientation);
+      const dims = getGridDimensions(items.length, orientation);
+      const rowWeights = buildRowWeights(items, dims.cols, dims.rows);
+
       grid.style.gridTemplateColumns = `repeat(${dims.cols}, 1fr)`;
-      grid.style.gridTemplateRows = `repeat(${dims.rows}, 1fr)`;
+      grid.style.gridTemplateRows = rowWeights.map(w => `${w.toFixed(2)}fr`).join(' ');
       return grid;
     }
 
