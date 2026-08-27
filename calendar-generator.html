@@ -264,7 +264,6 @@
       break-after: auto;
     }
 
-    /* Dimensioni esatte A4 per anteprima fedele */
     .pdf-page.portrait {
       width: 210mm;
       min-height: 297mm;
@@ -284,6 +283,40 @@
       color: #94a3b8;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+    }
+
+    /* SPECULAR / LIBRO LAYOUT (PAGINA SINISTRA vs DESTRA) */
+    .pdf-page.page-left {
+      padding-right: 18mm;
+      /* Margine interno rilegatura centrale */
+      padding-left: 8mm;
+      /* Margine esterno */
+    }
+
+    .pdf-page.page-left .page-watermark {
+      left: 6mm;
+      right: auto;
+    }
+
+    .pdf-page.page-right {
+      padding-left: 18mm;
+      /* Margine interno rilegatura centrale */
+      padding-right: 8mm;
+      /* Margine esterno */
+    }
+
+    .pdf-page.page-right .page-watermark {
+      right: 6mm;
+      left: auto;
+    }
+
+    /* Elementi speculari per pagina destra */
+    .pdf-page.page-right .list-header-banner {
+      flex-direction: row-reverse;
+    }
+
+    .pdf-page.page-right .list-event-item {
+      flex-direction: row-reverse;
     }
 
     /* Griglia Mesi Adattiva */
@@ -361,7 +394,7 @@
       line-height: 1.1;
     }
 
-    /* Stili Grafica Vista Elenco Rinnovata */
+    /* Stili Grafica Vista Elenco */
     .list-view-month {
       background: #fff;
       border-radius: 6px;
@@ -448,7 +481,7 @@
       margin-left: 6px;
     }
 
-    /* Stili Compatti per Griglie Multi-Mese (Tutto in 1 Pagina o 2 Pagine) */
+    /* Stili Compatti per Griglie Multi-Mese */
     .pdf-page.compact .month-header {
       font-size: 0.8rem;
       margin-bottom: 2px;
@@ -542,13 +575,14 @@
         <div id="sectorLegend" class="sector-legend"></div>
       </div>
 
-      <!-- 2. Anno Calendario -->
+      <!-- 2. Anno Calendario (ADATTIVO) -->
       <div class="section-card">
         <h2>2. Anno Calendario</h2>
         <div class="form-group">
-          <label for="yearInput">Seleziona Anno</label>
-          <input type="number" id="yearInput" value="2026" min="2000" max="2099" onchange="updateCalendar()">
+          <label for="yearSelect">Filtro Anno / Eventi</label>
+          <select id="yearSelect" onchange="updateCalendar()"></select>
         </div>
+        <div id="yearInfo" style="font-size:0.75rem; color:#64748b; font-weight:500;"></div>
       </div>
 
       <!-- 3. Aggiungi / Modifica Evento -->
@@ -602,7 +636,7 @@
         <div class="form-group">
           <label for="monthFilter">Mesi Inclusi</label>
           <select id="monthFilter" onchange="updateCalendar()">
-            <option value="all">Tutti i 12 Mesi</option>
+            <option value="all">Tutti i Mesi dell'Anno</option>
             <option value="active" selected>Solo Mesi con Eventi</option>
           </select>
         </div>
@@ -610,14 +644,14 @@
           <label for="pageLayoutOpt">Impaginazione PDF</label>
           <select id="pageLayoutOpt" onchange="updateCalendar()">
             <option value="single" selected>Tutto in 1 Singola Pagina (Griglia Adattiva)</option>
-            <option value="dual">2 Pagine (Libro - Sinistra / Destra)</option>
+            <option value="dual">2 Pagine Speculari (Libro - Sinistra / Destra)</option>
             <option value="multi">1 Pagina per ogni Mese</option>
           </select>
         </div>
         <div class="form-group">
           <label for="pdfOrientation">Orientamento Foglio</label>
           <select id="pdfOrientation" onchange="updateCalendar()">
-            <option value="landscape" selected>Orizzontale (Landscape - Consigliato)</option>
+            <option value="landscape" selected>Orizzontale (Landscape)</option>
             <option value="portrait">Verticale (Portrait)</option>
           </select>
         </div>
@@ -645,11 +679,53 @@
     const defaultPalette = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4f46e5', '#059669', '#ca8a04'];
 
     document.addEventListener("DOMContentLoaded", () => {
+      updateYearOptions();
       renderEventList();
       updateCalendar();
     });
 
-    // Lettura file CSV o Excel
+    function updateYearOptions() {
+      const select = document.getElementById('yearSelect');
+      const currentValue = select.value;
+
+      const years = [...new Set(events.map(e => e.date.split('-')[0]))].filter(Boolean).sort();
+      select.innerHTML = '';
+
+      if (years.length === 0) {
+        const currentYear = new Date().getFullYear().toString();
+        const opt = document.createElement('option');
+        opt.value = currentYear;
+        opt.innerText = `Anno ${currentYear}`;
+        select.appendChild(opt);
+      } else {
+        if (years.length > 1) {
+          const allOpt = document.createElement('option');
+          allOpt.value = 'all_years';
+          allOpt.innerText = `Tutti gli Anni (${years.join(', ')})`;
+          select.appendChild(allOpt);
+        }
+        years.forEach(y => {
+          const opt = document.createElement('option');
+          opt.value = y;
+          opt.innerText = `Anno ${y}`;
+          select.appendChild(opt);
+        });
+      }
+
+      if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+        select.value = currentValue;
+      } else if (years.length > 1) {
+        select.value = 'all_years';
+      }
+
+      const info = document.getElementById('yearInfo');
+      if (info) {
+        info.innerText = years.length > 0
+          ? `Anni rilevati: ${years.join(', ')}`
+          : 'Nessun evento presente';
+      }
+    }
+
     function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -702,8 +778,7 @@
 
         if (importedEvents.length > 0) {
           events = importedEvents;
-          const detectedYear = events[0].date.split('-')[0];
-          document.getElementById('yearInput').value = detectedYear;
+          updateYearOptions();
           renderSectorLegend();
           renderEventList();
           updateCalendar();
@@ -777,6 +852,7 @@
       }
 
       resetForm();
+      updateYearOptions();
       renderSectorLegend();
       renderEventList();
       updateCalendar();
@@ -795,6 +871,7 @@
 
     function deleteEvent(id) {
       events = events.filter(e => e.id !== id);
+      updateYearOptions();
       renderEventList();
       updateCalendar();
     }
@@ -804,6 +881,7 @@
         events = [];
         sectorColors = {};
         document.getElementById('sectorLegend').innerHTML = '';
+        updateYearOptions();
         renderEventList();
         updateCalendar();
       }
@@ -843,7 +921,6 @@
       });
     }
 
-    // Calcolo dinamico Colonne x Righe per adattare i mesi alla pagina
     function getGridDimensions(count, orientation) {
       if (count === 12) {
         return orientation === 'landscape' ? { cols: 4, rows: 3 } : { cols: 3, rows: 4 };
@@ -862,9 +939,9 @@
       return { cols, rows };
     }
 
-    // Rendering principale del Calendario e Anteprima PDF
+    // Rendering principale del Calendario
     function updateCalendar() {
-      const year = parseInt(document.getElementById('yearInput').value) || 2026;
+      const selectedYearOpt = document.getElementById('yearSelect').value;
       const viewMode = document.getElementById('viewMode').value;
       const monthFilter = document.getElementById('monthFilter').value;
       const pageLayout = document.getElementById('pageLayoutOpt').value;
@@ -873,63 +950,73 @@
 
       container.innerHTML = '';
 
-      let monthsToRender = [];
-      for (let m = 0; m < 12; m++) {
-        const monthStr = String(m + 1).padStart(2, '0');
-        const hasEvents = events.some(e => e.date.startsWith(`${year}-${monthStr}`));
-        if (monthFilter === 'all' || hasEvents) {
-          monthsToRender.push(m);
-        }
+      let yearsToRender = [];
+      const allDetectedYears = [...new Set(events.map(e => e.date.split('-')[0]))].filter(Boolean).sort();
+
+      if (selectedYearOpt === 'all_years') {
+        yearsToRender = allDetectedYears.length > 0 ? allDetectedYears : ['2026'];
+      } else {
+        yearsToRender = [selectedYearOpt || '2026'];
       }
 
-      if (monthsToRender.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #64748b; background: white; border-radius: 8px;">Nessun evento trovato per l'anno ${year}.</div>`;
+      let itemsToRender = [];
+
+      yearsToRender.forEach(yr => {
+        const numericYear = parseInt(yr);
+        for (let m = 0; m < 12; m++) {
+          const monthStr = String(m + 1).padStart(2, '0');
+          const hasEvents = events.some(e => e.date.startsWith(`${yr}-${monthStr}`));
+          if (monthFilter === 'all' || hasEvents) {
+            itemsToRender.push({ year: numericYear, month: m });
+          }
+        }
+      });
+
+      if (itemsToRender.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #64748b; background: white; border-radius: 8px;">Nessun evento trovato per la selezione corrente.</div>`;
         return;
       }
 
-      // 1. MODALITÀ MULTI-PAGINA (1 pagina per ogni mese)
       if (pageLayout === 'multi') {
-        monthsToRender.forEach(m => {
-          const page = createPdfPage(orientation, false, `Mese: ${monthNames[m]}`);
-          const monthNode = viewMode === 'grid' ? createGridMonth(year, m) : createListMonth(year, m);
+        itemsToRender.forEach(item => {
+          const page = createPdfPage(orientation, false, `Mese: ${monthNames[item.month]} ${item.year}`);
+          const monthNode = viewMode === 'grid' ? createGridMonth(item.year, item.month) : createListMonth(item.year, item.month);
           page.appendChild(monthNode);
           container.appendChild(page);
         });
       }
-      // 2. MODALITÀ SINGOLA PAGINA (Griglia 4x3 / 3x4 o adattiva)
       else if (pageLayout === 'single') {
         const page = createPdfPage(orientation, true, "Pagina Unica - Calendario Completo");
-        const gridContainer = createMonthsGridContainer(monthsToRender.length, orientation);
+        const gridContainer = createMonthsGridContainer(itemsToRender.length, orientation);
 
-        monthsToRender.forEach(m => {
-          const monthNode = viewMode === 'grid' ? createGridMonth(year, m) : createListMonth(year, m);
+        itemsToRender.forEach(item => {
+          const monthNode = viewMode === 'grid' ? createGridMonth(item.year, item.month) : createListMonth(item.year, item.month);
           gridContainer.appendChild(monthNode);
         });
 
         page.appendChild(gridContainer);
         container.appendChild(page);
       }
-      // 3. MODALITÀ DOPPIA PAGINA LIBRO (Pagina Sinistra & Pagina Destra)
       else if (pageLayout === 'dual') {
-        const halfCount = Math.ceil(monthsToRender.length / 2);
-        const leftMonths = monthsToRender.slice(0, halfCount);
-        const rightMonths = monthsToRender.slice(halfCount);
+        const halfCount = Math.ceil(itemsToRender.length / 2);
+        const leftItems = itemsToRender.slice(0, halfCount);
+        const rightItems = itemsToRender.slice(halfCount);
 
-        // Pagina 1: Sinistra
-        const page1 = createPdfPage(orientation, true, "Pagina 1 (Sinistra)");
-        const grid1 = createMonthsGridContainer(leftMonths.length, orientation);
-        leftMonths.forEach(m => {
-          grid1.appendChild(viewMode === 'grid' ? createGridMonth(year, m) : createListMonth(year, m));
+        // Pagina 1 (Sinistra)
+        const page1 = createPdfPage(orientation, true, "Pagina 1 (Sinistra)", "left");
+        const grid1 = createMonthsGridContainer(leftItems.length, orientation);
+        leftItems.forEach(item => {
+          grid1.appendChild(viewMode === 'grid' ? createGridMonth(item.year, item.month) : createListMonth(item.year, item.month));
         });
         page1.appendChild(grid1);
         container.appendChild(page1);
 
-        // Pagina 2: Destra
-        if (rightMonths.length > 0) {
-          const page2 = createPdfPage(orientation, true, "Pagina 2 (Destra)");
-          const grid2 = createMonthsGridContainer(rightMonths.length, orientation);
-          rightMonths.forEach(m => {
-            grid2.appendChild(viewMode === 'grid' ? createGridMonth(year, m) : createListMonth(year, m));
+        // Pagina 2 (Destra Speculare)
+        if (rightItems.length > 0) {
+          const page2 = createPdfPage(orientation, true, "Pagina 2 (Destra)", "right");
+          const grid2 = createMonthsGridContainer(rightItems.length, orientation);
+          rightItems.forEach(item => {
+            grid2.appendChild(viewMode === 'grid' ? createGridMonth(item.year, item.month) : createListMonth(item.year, item.month));
           });
           page2.appendChild(grid2);
           container.appendChild(page2);
@@ -937,9 +1024,9 @@
       }
     }
 
-    function createPdfPage(orientation, isCompact, watermarkText) {
+    function createPdfPage(orientation, isCompact, watermarkText, side = 'single') {
       const page = document.createElement('div');
-      page.className = `pdf-page ${orientation} ${isCompact ? 'compact' : ''}`;
+      page.className = `pdf-page ${orientation} ${isCompact ? 'compact' : ''} ${side !== 'single' ? 'page-' + side : ''}`;
 
       const watermark = document.createElement('div');
       watermark.className = 'page-watermark';
@@ -1066,13 +1153,13 @@
 
     function exportToPDF() {
       const element = document.getElementById('pdfContent');
-      const year = document.getElementById('yearInput').value;
+      const yearSelection = document.getElementById('yearSelect').value;
       const orientation = document.getElementById('pdfOrientation').value;
       const pageLayout = document.getElementById('pageLayoutOpt').value;
 
       const opt = {
         margin: pageLayout === 'multi' ? 8 : 4,
-        filename: `Calendario_${year}.pdf`,
+        filename: `Calendario_${yearSelection}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: orientation }
