@@ -34,15 +34,17 @@
       overflow: hidden;
     }
 
-    /* Layout Principale */
+    /* Layout Principale Responsivo */
     .app-container {
       display: flex;
       width: 100vw;
       height: 100vh;
+      overflow: hidden;
     }
 
     .sidebar {
       width: 360px;
+      min-width: 320px;
       background: var(--panel-bg);
       border-right: 1px solid var(--border);
       padding: 20px;
@@ -50,17 +52,47 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+      flex-shrink: 0;
     }
 
+    /* Correzione Taglio Orizzontale Anteprima */
     .main-preview {
       flex: 1;
       padding: 30px;
       overflow-y: auto;
+      overflow-x: auto;
       background-color: #cbd5e1;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 24px;
+      min-width: 0;
+      width: 100%;
+    }
+
+    /* Supporto Schermi Piccoli (Media Query) */
+    @media (max-width: 1100px) {
+      body {
+        overflow: auto;
+        height: auto;
+      }
+
+      .app-container {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+      }
+
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .main-preview {
+        padding: 15px;
+        width: 100%;
+      }
     }
 
     /* Schede Controllo */
@@ -244,6 +276,7 @@
       flex-direction: column;
       gap: 20px;
       align-items: center;
+      max-width: 100%;
     }
 
     .pdf-page {
@@ -257,6 +290,7 @@
       flex-direction: column;
       page-break-after: always;
       break-after: page;
+      flex-shrink: 0;
     }
 
     .pdf-page:last-child {
@@ -288,9 +322,7 @@
     /* SPECULAR / LIBRO LAYOUT (PAGINA SINISTRA vs DESTRA) */
     .pdf-page.page-left {
       padding-right: 18mm;
-      /* Margine interno rilegatura centrale */
       padding-left: 8mm;
-      /* Margine esterno */
     }
 
     .pdf-page.page-left .page-watermark {
@@ -300,9 +332,7 @@
 
     .pdf-page.page-right {
       padding-left: 18mm;
-      /* Margine interno rilegatura centrale */
       padding-right: 8mm;
-      /* Margine esterno */
     }
 
     .pdf-page.page-right .page-watermark {
@@ -310,7 +340,6 @@
       left: auto;
     }
 
-    /* Elementi speculari per pagina destra */
     .pdf-page.page-right .list-header-banner {
       flex-direction: row-reverse;
     }
@@ -544,6 +573,7 @@
       .main-preview {
         padding: 0;
         background: white;
+        overflow: visible;
       }
 
       .pdf-page {
@@ -568,8 +598,8 @@
       <div class="section-card">
         <h2>1. Importa File</h2>
         <div class="form-group">
-          <label for="fileInput">File CSV o Excel (.xlsx)</label>
-          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" onchange="handleFileUpload(event)">
+          <label for="fileInput">File CSV, Excel (.xlsx) o Google Calendar (.ics)</label>
+          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .ics" onchange="handleFileUpload(event)">
         </div>
         <label style="margin-top:4px; display:block;">Categorie rilevate:</label>
         <div id="sectorLegend" class="sector-legend"></div>
@@ -726,67 +756,141 @@
       }
     }
 
+    // Gestione Caricamento File (ICS, CSV, XLSX)
     function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = function (evt) {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      const fileName = file.name.toLowerCase();
 
-        let importedEvents = [];
-        sectorColors = {};
-        let paletteIndex = 0;
+      if (fileName.endsWith('.ics')) {
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          const text = evt.target.result;
+          const parsedEvents = parseICS(text);
+          if (parsedEvents.length > 0) {
+            events = parsedEvents;
+            updateYearOptions();
+            renderSectorLegend();
+            renderEventList();
+            updateCalendar();
+          } else {
+            alert("Nessun evento valido trovato nel file ICS di Google Calendar.");
+          }
+        };
+        reader.readAsText(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
-        workbook.SheetNames.forEach(sheetName => {
-          if (sheetName.toLowerCase() === 'summary' || sheetName.toLowerCase() === 'indice') return;
+          let importedEvents = [];
+          sectorColors = {};
+          let paletteIndex = 0;
 
-          const sheet = workbook.Sheets[sheetName];
-          const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+          workbook.SheetNames.forEach(sheetName => {
+            if (sheetName.toLowerCase() === 'summary' || sheetName.toLowerCase() === 'indice') return;
 
-          jsonRows.forEach(row => {
-            const title = row.Summary || row.Subject || row.Title || row.Event || row.Name || row.Titolo || row.Oggetto;
-            if (!title) return;
+            const sheet = workbook.Sheets[sheetName];
+            const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
-            let rawDate = row.Start || row['Start Date'] || row.DTSTART || row.Date || row.Data;
-            if (!rawDate) return;
+            jsonRows.forEach(row => {
+              const title = row.Summary || row.Subject || row.Title || row.Event || row.Name || row.Titolo || row.Oggetto;
+              if (!title) return;
 
-            let formattedDate = parseRawDate(rawDate);
-            if (!formattedDate) return;
+              let rawDate = row.Start || row['Start Date'] || row.DTSTART || row.Date || row.Data;
+              if (!rawDate) return;
 
-            let sector = row.Calendar || row.Sector || row.Category || row.Categoria || row.Settore || sheetName;
-            if (typeof sector === 'string' && sector.includes('_')) {
-              sector = sector.split('_')[0];
-            }
-            if (!sector) sector = 'Generale';
+              let formattedDate = parseRawDate(rawDate);
+              if (!formattedDate) return;
 
-            if (!sectorColors[sector]) {
-              sectorColors[sector] = defaultPalette[paletteIndex % defaultPalette.length];
-              paletteIndex++;
-            }
+              let sector = row.Calendar || row.Sector || row.Category || row.Categoria || row.Settore || sheetName;
+              if (typeof sector === 'string' && sector.includes('_')) {
+                sector = sector.split('_')[0];
+              }
+              if (!sector) sector = 'Generale';
 
-            importedEvents.push({
-              id: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
-              title: String(title).trim(),
-              date: formattedDate,
-              color: sectorColors[sector],
-              sector: sector
+              if (!sectorColors[sector]) {
+                sectorColors[sector] = defaultPalette[paletteIndex % defaultPalette.length];
+                paletteIndex++;
+              }
+
+              importedEvents.push({
+                id: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
+                title: String(title).trim(),
+                date: formattedDate,
+                color: sectorColors[sector],
+                sector: sector
+              });
             });
           });
-        });
 
-        if (importedEvents.length > 0) {
-          events = importedEvents;
-          updateYearOptions();
-          renderSectorLegend();
-          renderEventList();
-          updateCalendar();
-        } else {
-          alert("Nessun evento valido trovato nel file caricato.");
+          if (importedEvents.length > 0) {
+            events = importedEvents;
+            updateYearOptions();
+            renderSectorLegend();
+            renderEventList();
+            updateCalendar();
+          } else {
+            alert("Nessun evento valido trovato nel file caricato.");
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    }
+
+    // Parser iCalendar (.ics Google Calendar)
+    function parseICS(icsText) {
+      const parsedEvents = [];
+      sectorColors = {};
+      let paletteIndex = 0;
+
+      // Dispiega righe spezzate RFC 5545
+      const unfolded = icsText.replace(/\r?\n[ \t]/g, '');
+      const vevents = unfolded.split('BEGIN:VEVENT');
+
+      for (let i = 1; i < vevents.length; i++) {
+        const block = vevents[i].split('END:VEVENT')[0];
+        const lines = block.split(/\r?\n/);
+
+        let summary = '';
+        let dtstart = '';
+        let category = 'Google Calendar';
+
+        for (let line of lines) {
+          if (line.startsWith('SUMMARY:')) {
+            summary = line.substring(8).trim();
+          } else if (line.startsWith('SUMMARY;')) {
+            summary = line.substring(line.indexOf(':') + 1).trim();
+          } else if (line.startsWith('DTSTART:') || line.startsWith('DTSTART;')) {
+            const val = line.substring(line.indexOf(':') + 1).trim();
+            const match = val.match(/(\d{4})(\d{2})(\d{2})/);
+            if (match) {
+              dtstart = `${match[1]}-${match[2]}-${match[3]}`;
+            }
+          } else if (line.startsWith('CATEGORIES:')) {
+            category = line.substring(11).trim().split(',')[0];
+          }
         }
-      };
-      reader.readAsArrayBuffer(file);
+
+        if (summary && dtstart) {
+          if (!sectorColors[category]) {
+            sectorColors[category] = defaultPalette[paletteIndex % defaultPalette.length];
+            paletteIndex++;
+          }
+
+          parsedEvents.push({
+            id: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
+            title: summary,
+            date: dtstart,
+            color: sectorColors[category],
+            sector: category
+          });
+        }
+      }
+
+      return parsedEvents;
     }
 
     function parseRawDate(raw) {
