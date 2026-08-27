@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importatore Calendario & Esportatore PDF</title>
+
+  <!-- Librerie Esterne: SheetJS e html2pdf -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bg: #f8fafc;
+      --panel-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+    /* Layout */
+    .app-container { display: flex; width: 100vw; height: 100vh; }
+    .sidebar { width: 360px; background: var(--panel-bg); border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+    .main-preview { flex: 1; padding: 30px; overflow-y: auto; background-color: #f1f5f9; display: flex; justify-content: center; align-items: flex-start; }
+
+    /* Control Groups */
+    .section-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 10px; color: #1e293b; display: flex; align-items: center; justify-content: space-between; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+    label { font-size: 0.8rem; font-weight: 600; color: #475569; }
+    input, select, button { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; outline: none; }
+    input[type="color"] { padding: 2px; height: 36px; cursor: pointer; }
+    input[type="file"] { background: white; font-size: 0.8rem; }
+    
+    button { cursor: pointer; background-color: var(--primary); color: white; border: none; font-weight: 600; transition: background 0.2s; }
+    button:hover { background-color: #1d4ed8; }
+    button.secondary { background-color: #64748b; }
+    button.secondary:hover { background-color: #475569; }
+    button.danger { background-color: #ef4444; }
+    button.danger:hover { background-color: #dc2626; }
+
+    /* Sector Badges & Category Color Picker */
+    .sector-legend { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 120px; overflow-y: auto; }
+    .sector-chip { display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; padding: 4px 8px; border-radius: 6px; background: white; border: 1px solid var(--border); font-weight: 500; }
+    .sector-chip-left { display: flex; align-items: center; gap: 8px; }
+    .sector-color-picker { border: none; padding: 0; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; background: none; }
+    .sector-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+    .sector-color-picker::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+    /* Event Registry List */
+    .event-list { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+    .event-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: white; border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; }
+    .event-info { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+    .event-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+    .action-btn { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 0 3px; color: #64748b; }
+    .action-btn.delete:hover { color: #ef4444; }
+
+    /* Export Area */
+    #pdfContent { background: white; width: 800px; padding: 35px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); transition: width 0.3s ease; }
+    #pdfContent.single-page-scaling { width: 100% !important; max-width: 1100px; padding: 15px; }
+    #pdfContent.single-page-scaling .pdf-page { page-break-after: avoid !important; break-after: avoid !important; margin-bottom: 15px; }
+    #pdfContent.single-page-scaling .calendar-grid { font-size: 0.8em; }
+    #pdfContent.single-page-scaling .day-cell { height: 48px; padding: 2px; }
+    #pdfContent.single-page-scaling .event-tag { font-size: 0.55rem; padding: 1px 3px; }
+
+    .pdf-page { page-break-after: always; break-after: page; margin-bottom: 30px; }
+    .pdf-page:last-child { page-break-after: auto; break-after: auto; margin-bottom: 0; }
+
+    /* Grid Layout View */
+    .month-header { text-align: center; font-size: 1.4rem; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; color: #0f172a; letter-spacing: 1px; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid #cbd5e1; border-left: 1px solid #cbd5e1; }
+    .day-header { background: #f1f5f9; text-align: center; font-weight: 700; padding: 6px 0; font-size: 0.75rem; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; color: #475569; }
+    .day-cell { height: 85px; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; padding: 3px; vertical-align: top; overflow: hidden; background: white; }
+    .day-number { font-size: 0.7rem; font-weight: 700; color: #64748b; margin-bottom: 3px; }
+    .event-tag { font-size: 0.65rem; color: white; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+
+    /* Redesigned List Layout View */
+    .list-view-month { margin-bottom: 25px; page-break-inside: avoid; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .list-header-banner { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 8px 16px; font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; }
+    .list-header-banner .year-badge { background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 500; }
+    .list-events { list-style: none; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .list-event-item { font-size: 0.88rem; display: flex; align-items: center; gap: 12px; padding: 6px 10px; border-radius: 6px; background: #f8fafc; border: 1px solid #edf2f7; }
+    .list-day-badge { background: #e2e8f0; color: #334155; font-weight: 700; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; min-width: 65px; text-align: center; }
+    .list-event-tag { font-weight: 600; padding: 4px 10px; border-radius: 4px; color: white; font-size: 0.82rem; flex: 1; display: flex; align-items: center; justify-content: space-between; }
+    .list-event-sector-sub { font-size: 0.7rem; opacity: 0.85; text-transform: uppercase; font-weight: 400; margin-left: 8px; }
+
+    @media print {
+      .sidebar { display: none; }
+      .main-preview { padding: 0; background: white; }
+      #pdfContent { box-shadow: none; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Barra Laterale Controlli -->
+    <div class="sidebar">
+
+      <!-- 1. Importa File -->
+      <div class="section-card">
+        <h2>1. Importa File</h2>
+        <div class="form-group">
+          <label for="fileInput">Seleziona CSV o Excel (.xlsx)</label>
+          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" onchange="handleFileUpload(event)">
+        </div>
+        <label style="margin-top:6px; display:block;">Categorie rilevate:</label>
+        <div id="sectorLegend" class="sector-legend"></div>
+      </div>
+
+      <!-- 2. Anno Calendario -->
+      <div class="section-card">
+        <h2>2. Anno Calendario</h2>
+        <div class="form-group">
+          <label for="yearInput">Seleziona Anno</label>
+          <input type="number" id="yearInput" value="2026" min="2000" max="2099" onchange="updateCalendar()">
+        </div>
+      </div>
+
+      <!-- 3. Aggiungi / Modifica Evento -->
+      <div class="section-card">
+        <h2 id="formTitle">3. Aggiungi Evento</h2>
+        <form id="eventForm" onsubmit="saveEvent(event)">
+          <input type="hidden" id="eventId">
+          <div class="form-group">
+            <label for="eventTitle">Nome Evento</label>
+            <input type="text" id="eventTitle" placeholder="es. Consiglio Diocesano" required>
+          </div>
+          <div class="form-group">
+            <label for="eventDate">Data</label>
+            <input type="date" id="eventDate" required>
+          </div>
+          <div class="form-group">
+            <label for="eventSector">Categoria / Settore</label>
+            <input type="text" id="eventSector" placeholder="es. ADULTI, GIOVANI">
+          </div>
+          <div class="form-group">
+            <label for="eventColor">Colore Tag</label>
+            <input type="color" id="eventColor" value="#2563eb">
+          </div>
+          <div style="display:flex; gap: 6px;">
+            <button type="submit" style="flex:1;">Salva</button>
+            <button type="button" class="secondary" onclick="resetForm()">Pulisci</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 4. Registro Eventi -->
+      <div class="section-card">
+        <h2>
+          Registro Eventi
+          <button type="button" class="danger" onclick="clearAllEvents()" style="font-size:0.7rem; padding: 2px 6px;">Elimina Tutti</button>
+        </h2>
+        <div class="event-list" id="eventListContainer"></div>
+      </div>
+
+      <!-- 5. Opzioni Esportazione PDF -->
+      <div class="section-card">
+        <h2>4. Opzioni Export PDF</h2>
+        <div class="form-group">
+          <label for="viewMode">Formato Vista</label>
+          <select id="viewMode" onchange="updateCalendar()">
+            <option value="grid">Griglia Classica</option>
+            <option value="list">Vista Elenco Elegante</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="monthFilter">Mesi Inclusi</label>
+          <select id="monthFilter" onchange="updateCalendar()">
+            <option value="all">Esporta Tutti i Mesi (12 Mesi)</option>
+            <option value="active" selected>Esporta Solo Mesi con Eventi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="singlePageOpt">Impaginazione PDF</label>
+          <select id="singlePageOpt" onchange="updateCalendar()">
+            <option value="multi">Una Pagina per Mese</option>
+            <option value="single">Tutto in 1 Singola Pagina (Scalato)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="pdfOrientation">Orientamento Pagina</label>
+          <select id="pdfOrientation">
+            <option value="portrait">Verticale (Portrait)</option>
+            <option value="landscape">Orizzontale (Landscape)</option>
+          </select>
+        </div>
+        <button onclick="exportToPDF()" style="width: 100%; padding: 10px; background-color: #16a34a; font-size: 0.9rem;">
+          Scarica PDF
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Anteprima Principale Live -->
+    <div class="main-preview">
+      <div id="pdfContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // Stato dell'applicazione
+    let events = [];
+    let sectorColors = {};
+
+    const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+    const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+    const defaultPalette = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4f46e5', '#059669', '#ca8a04'];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderEventList();
+      updateCalendar();
+    });
+
+    // Lettura file CSV o Excel
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+        let importedEvents = [];
+        sectorColors = {};
+        let paletteIndex = 0;
+
+        workbook.SheetNames.forEach(sheetName => {
+          if (sheetName.toLowerCase() === 'summary' || sheetName.toLowerCase() === 'indice') return;
+
+          const sheet = workbook.Sheets[sheetName];
+          const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+          jsonRows.forEach(row => {
+            const title = row.Summary || row.Subject || row.Title || row.Event || row.Name || row.Titolo || row.Oggetto;
+            if (!title) return;
+
+            let rawDate = row.Start || row['Start Date'] || row.DTSTART || row.Date || row.Data;
+            if (!rawDate) return;
+
+            let formattedDate = parseRawDate(rawDate);
+            if (!formattedDate) return;
+
+            let sector = row.Calendar || row.Sector || row.Category || row.Categoria || row.Settore || sheetName;
+            if (typeof sector === 'string' && sector.includes('_')) {
+              sector = sector.split('_')[0];
+            }
+            if (!sector) sector = 'Generale';
+
+            if (!sectorColors[sector]) {
+              sectorColors[sector] = defaultPalette[paletteIndex % defaultPalette.length];
+              paletteIndex++;
+            }
+
+            importedEvents.push({
+              id: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
+              title: String(title).trim(),
+              date: formattedDate,
+              color: sectorColors[sector],
+              sector: sector
+            });
+          });
+        });
+
+        if (importedEvents.length > 0) {
+          events = importedEvents;
+          const detectedYear = events[0].date.split('-')[0];
+          document.getElementById('yearInput').value = detectedYear;
+          renderSectorLegend();
+          renderEventList();
+          updateCalendar();
+        } else {
+          alert("Nessun evento valido trovato nel file caricato.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function parseRawDate(raw) {
+      if (raw instanceof Date) {
+        return raw.toISOString().split('T')[0];
+      }
+      if (typeof raw === 'string') {
+        const match = raw.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        if (match) {
+          return `${match[1]}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}`;
+        }
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) {
+          return d.toISOString().split('T')[0];
+        }
+      }
+      return null;
+    }
+
+    // Renderizza la legenda categorie con selettore colore dinamico
+    function renderSectorLegend() {
+      const container = document.getElementById('sectorLegend');
+      container.innerHTML = '';
+      Object.keys(sectorColors).forEach(sec => {
+        const chip = document.createElement('div');
+        chip.className = 'sector-chip';
+        chip.innerHTML = `
+          <div class="sector-chip-left">
+            <input type="color" class="sector-color-picker" value="${sectorColors[sec]}" onchange="updateCategoryColor('${sec}', this.value)">
+            <span>${sec}</span>
+          </div>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    // Aggiorna il colore di tutta la categoria
+    function updateCategoryColor(sector, newColor) {
+      sectorColors[sector] = newColor;
+      events.forEach(evt => {
+        if (evt.sector === sector) {
+          evt.color = newColor;
+        }
+      });
+      renderEventList();
+      updateCalendar();
+    }
+
+    function saveEvent(e) {
+      e.preventDefault();
+      const id = document.getElementById('eventId').value;
+      const title = document.getElementById('eventTitle').value;
+      const date = document.getElementById('eventDate').value;
+      const sector = document.getElementById('eventSector').value || 'Generale';
+      const color = document.getElementById('eventColor').value;
+
+      if (!sectorColors[sector]) {
+        sectorColors[sector] = color;
+      }
+
+      if (id) {
+        events = events.map(evt => evt.id === id ? { id, title, date, sector, color } : evt);
+      } else {
+        events.push({ id: Date.now().toString(), title, date, sector, color });
+      }
+
+      resetForm();
+      renderSectorLegend();
+      renderEventList();
+      updateCalendar();
+    }
+
+    function editEvent(id) {
+      const evt = events.find(e => e.id === id);
+      if (!evt) return;
+      document.getElementById('eventId').value = evt.id;
+      document.getElementById('eventTitle').value = evt.title;
+      document.getElementById('eventDate').value = evt.date;
+      document.getElementById('eventSector').value = evt.sector || '';
+      document.getElementById('eventColor').value = evt.color;
+      document.getElementById('formTitle').innerText = "3. Modifica Evento";
+    }
+
+    function deleteEvent(id) {
+      events = events.filter(e => e.id !== id);
+      renderEventList();
+      updateCalendar();
+    }
+
+    function clearAllEvents() {
+      if (confirm("Sei sicuro di voler rimuovere tutti gli eventi?")) {
+        events = [];
+        sectorColors = {};
+        document.getElementById('sectorLegend').innerHTML = '';
+        renderEventList();
+        updateCalendar();
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('eventId').value = '';
+      document.getElementById('eventTitle').value = '';
+      document.getElementById('eventDate').value = '';
+      document.getElementById('eventSector').value = '';
+      document.getElementById('eventColor').value = '#2563eb';
+      document.getElementById('formTitle').innerText = "3. Aggiungi Evento";
+    }
+
+    function renderEventList() {
+      const container = document.getElementById('eventListContainer');
+      container.innerHTML = '';
+      
+      const sorted = [...events].sort((a,b) => a.date.localeCompare(b.date));
+      sorted.forEach(evt => {
+        const item = document.createElement('div');
+        item.className = 'event-item';
+        item.innerHTML = `
+          <div class="event-info">
+            <span style="width:10px; height:10px; border-radius:50%; background:${evt.color}; display:inline-block;"></span>
+            <div class="event-text">
+              <strong>${evt.title}</strong><br>
+              <small style="color:#64748b">${evt.date} (${evt.sector || 'Generale'})</small>
+            </div>
+          </div>
+          <div>
+            <button type="button" class="action-btn" onclick="editEvent('${evt.id}')">✎</button>
+            <button type="button" class="action-btn delete" onclick="deleteEvent('${evt.id}')">&times;</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function updateCalendar() {
+      const year = parseInt(document.getElementById('yearInput').value) || 2026;
+      const viewMode = document.getElementById('viewMode').value;
+      const monthFilter = document.getElementById('monthFilter').value;
+      const isSinglePage = document.getElementById('singlePageOpt').value === 'single';
+      const container = document.getElementById('pdfContent');
+
+      container.innerHTML = '';
+      if (isSinglePage) {
+        container.classList.add('single-page-scaling');
+      } else {
+        container.classList.remove('single-page-scaling');
+      }
+
+      let monthsToRender = [];
+      for (let m = 0; m < 12; m++) {
+        const monthStr = String(m + 1).padStart(2, '0');
+        const hasEvents = events.some(e => e.date.startsWith(`${year}-${monthStr}`));
+        if (monthFilter === 'all' || hasEvents) {
+          monthsToRender.push(m);
+        }
+      }
+
+      if (monthsToRender.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #64748b;">Nessun evento trovato per l'anno ${year}.</div>`;
+        return;
+      }
+
+      if (viewMode === 'grid') {
+        monthsToRender.forEach(m => container.appendChild(createGridMonth(year, m)));
+      } else {
+        monthsToRender.forEach(m => container.appendChild(createListMonth(year, m)));
+      }
+    }
+
+    function createGridMonth(year, month) {
+      const page = document.createElement('div');
+      page.className = 'pdf-page';
+
+      const header = document.createElement('div');
+      header.className = 'month-header';
+      header.innerText = `${monthNames[month]} ${year}`;
+      page.appendChild(header);
+
+      const grid = document.createElement('div');
+      grid.className = 'calendar-grid';
+
+      dayNames.forEach(d => {
+        const dh = document.createElement('div');
+        dh.className = 'day-header';
+        dh.innerText = d;
+        grid.appendChild(dh);
+      });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'day-cell';
+        emptyCell.style.background = '#f8fafc';
+        grid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'day-cell';
+
+        const dayNum = document.createElement('div');
+        dayNum.className = 'day-number';
+        dayNum.innerText = day;
+        cell.appendChild(dayNum);
+
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayEvents = events.filter(e => e.date === dateStr);
+
+        dayEvents.forEach(evt => {
+          const tag = document.createElement('div');
+          tag.className = 'event-tag';
+          tag.style.backgroundColor = evt.color;
+          tag.innerText = evt.title;
+          cell.appendChild(tag);
+        });
+
+        grid.appendChild(cell);
+      }
+
+      page.appendChild(grid);
+      return page;
+    }
+
+    function createListMonth(year, month) {
+      const page = document.createElement('div');
+      page.className = 'list-view-month';
+
+      const monthStr = String(month + 1).padStart(2, '0');
+      const monthEvents = events
+        .filter(e => e.date.startsWith(`${year}-${monthStr}`))
+        .sort((a,b) => a.date.localeCompare(b.date));
+
+      const header = document.createElement('div');
+      header.className = 'list-header-banner';
+      header.innerHTML = `
+        <span>${monthNames[month]}</span>
+        <span class="year-badge">${year}</span>
+      `;
+      page.appendChild(header);
+
+      const list = document.createElement('ul');
+      list.className = 'list-events';
+
+      if (monthEvents.length === 0) {
+        const emptyLi = document.createElement('li');
+        emptyLi.style.color = '#94a3b8';
+        emptyLi.style.fontSize = '0.85rem';
+        emptyLi.style.padding = '8px';
+        emptyLi.innerText = 'Nessun evento in programma';
+        list.appendChild(emptyLi);
+      } else {
+        monthEvents.forEach(evt => {
+          const dateObj = new Date(evt.date);
+          const dayNum = evt.date.split('-')[2];
+          const dayOfWeek = dayNames[dateObj.getDay()];
+
+          const li = document.createElement('li');
+          li.className = 'list-event-item';
+          li.innerHTML = `
+            <div class="list-day-badge">${dayOfWeek} ${parseInt(dayNum)}</div>
+            <div class="list-event-tag" style="background:${evt.color}">
+              <span>${evt.title}</span>
+              ${evt.sector ? `<span class="list-event-sector-sub">${evt.sector}</span>` : ''}
+            </div>
+          `;
+          list.appendChild(li);
+        });
+      }
+
+      page.appendChild(list);
+      return page;
+    }
+
+    function exportToPDF() {
+      const element = document.getElementById('pdfContent');
+      const year = document.getElementById('yearInput').value;
+      const orientation = document.getElementById('pdfOrientation').value;
+      const isSinglePage = document.getElementById('singlePageOpt').value === 'single';
+
+      const opt = {
+        margin:       isSinglePage ? 4 : 8,
+        filename:     `Calendario_${year}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: orientation }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+</body>
+</html>
