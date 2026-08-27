@@ -29,12 +29,11 @@
     body {
       background-color: var(--bg);
       color: var(--text);
-      display: flex;
       height: 100vh;
       overflow: hidden;
     }
 
-    /* Layout Principale Responsivo */
+    /* Layout */
     .app-container {
       display: flex;
       width: 100vw;
@@ -298,7 +297,7 @@
       color: #ef4444;
     }
 
-    /* Area Anteprima Foglio PDF Dynamic Dimensions */
+    /* PDF preview */
     #pdfContent {
       display: flex;
       flex-direction: column;
@@ -316,16 +315,13 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      page-break-after: always;
       break-after: page;
-      page-break-inside: avoid;
       break-inside: avoid;
       flex-shrink: 0;
       overflow: hidden;
     }
 
     .pdf-page:last-child {
-      page-break-after: auto;
       break-after: auto;
     }
 
@@ -371,7 +367,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* SPECULAR LAYOUT */
+    /* Book spread layout */
     .pdf-page.page-left {
       padding-right: 18mm;
       padding-left: 8mm;
@@ -432,16 +428,14 @@
       min-height: 0;
     }
 
-    /* Strict Anti-Split Rule for Month Containers */
+    /* Keep month blocks together */
     .month-card,
     .list-view-month {
-      page-break-inside: avoid !important;
-      break-inside: avoid-page !important;
       box-sizing: border-box;
       max-height: 100%;
     }
 
-    /* Stili Grafica Calendario Singolo Mese (Fixed Grid) */
+    /* Calendar month grid */
     .month-card {
       display: flex;
       flex-direction: column;
@@ -510,7 +504,7 @@
       line-height: 1.1;
     }
 
-    /* Stili Grafica Vista Elenco (Flat View) */
+    /* List view */
     .list-view-month {
       background: #fff;
       border-radius: 6px;
@@ -600,7 +594,7 @@
       margin-left: 6px;
     }
 
-    /* Stili Compatti per Griglie Multi-Mese */
+    /* Compact multi-month layout */
     .pdf-page.compact .month-header {
       font-size: 0.78rem;
       margin-bottom: 2px;
@@ -687,8 +681,7 @@
         <h2>1. Importa File Multipli</h2>
         <div class="form-group">
           <label for="fileInput">Seleziona uno o più file (.ics, .csv, .xlsx)</label>
-          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .ics" multiple
-            onchange="handleMultipleFileUpload(event)">
+          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .ics" multiple>
         </div>
         <label style="margin-top:4px; display:block;">Categorie rilevate:</label>
         <div id="sectorLegend" class="sector-legend"></div>
@@ -699,13 +692,13 @@
         <h2>2. Filtro Anno & Azioni In Massa</h2>
         <div class="form-group">
           <label for="yearSelect">Filtro Anno Visualizzato</label>
-          <select id="yearSelect" onchange="updateCalendar()"></select>
+          <select id="yearSelect"></select>
         </div>
         <div id="yearInfo" style="font-size:0.75rem; color:#64748b; font-weight:500; margin-bottom: 8px;"></div>
 
         <label>Eliminazione per Anno:</label>
         <div id="bulkYearsContainer" class="bulk-years-list"></div>
-        <button type="button" class="danger" onclick="deleteSelectedYears()"
+        <button type="button" class="danger" id="deleteSelectedYearsButton"
           style="width:100%; font-size:0.78rem; padding:6px;">
           Elimina Anni Selezionati
         </button>
@@ -714,7 +707,7 @@
       <!-- 3. Aggiungi / Modifica Evento -->
       <div class="section-card">
         <h2 id="formTitle">3. Aggiungi Evento</h2>
-        <form id="eventForm" onsubmit="saveEvent(event)">
+        <form id="eventForm">
           <input type="hidden" id="eventId">
           <div class="form-group">
             <label for="eventTitle">Nome Evento</label>
@@ -734,7 +727,7 @@
           </div>
           <div style="display:flex; gap: 6px;">
             <button type="submit" style="flex:1;">Salva</button>
-            <button type="button" class="secondary" onclick="resetForm()">Pulisci</button>
+            <button type="button" class="secondary" id="resetFormButton">Pulisci</button>
           </div>
         </form>
       </div>
@@ -743,8 +736,8 @@
       <div class="section-card">
         <h2>
           Registro Eventi
-          <button type="button" class="danger" onclick="clearAllEvents()"
-            style="font-size:0.7rem; padding: 2px 6px;">Elimina Tutti</button>
+          <button type="button" class="danger" id="clearAllButton" style="font-size:0.7rem; padding: 2px 6px;">Elimina
+            Tutti</button>
         </h2>
         <div class="event-list" id="eventListContainer"></div>
       </div>
@@ -754,7 +747,7 @@
         <h2>4. Opzioni Export PDF</h2>
         <div class="form-group">
           <label for="pageSizeOpt">Formato Dimensione Pagina</label>
-          <select id="pageSizeOpt" onchange="updateCalendar()">
+          <select id="pageSizeOpt" data-refresh-calendar>
             <option value="a4" selected>A4 (210 x 297 mm)</option>
             <option value="a3">A3 (297 x 420 mm)</option>
             <option value="letter">Letter (216 x 279 mm)</option>
@@ -762,21 +755,21 @@
         </div>
         <div class="form-group">
           <label for="viewMode">Formato Vista Mesi</label>
-          <select id="viewMode" onchange="updateCalendar()">
+          <select id="viewMode" data-refresh-calendar>
             <option value="grid">Griglia Classica</option>
             <option value="list">Vista Elenco Elegante (Flat View)</option>
           </select>
         </div>
         <div class="form-group">
           <label for="monthFilter">Mesi Inclusi</label>
-          <select id="monthFilter" onchange="updateCalendar()">
+          <select id="monthFilter" data-refresh-calendar>
             <option value="all">Tutti i Mesi dell'Anno</option>
             <option value="active" selected>Solo Mesi con Eventi</option>
           </select>
         </div>
         <div class="form-group">
           <label for="pageLayoutOpt">Impaginazione PDF</label>
-          <select id="pageLayoutOpt" onchange="toggleSplitOption(); updateCalendar();">
+          <select id="pageLayoutOpt">
             <option value="single" selected>Tutto in 1 Singola Pagina</option>
             <option value="dual">2 Pagine Speculari (Libro)</option>
             <option value="multi">1 Pagina per ogni Mese</option>
@@ -786,7 +779,7 @@
         <!-- Opzioni Divisione Avanzata -->
         <div class="form-group" id="splitYearGroup" style="display:none;">
           <label for="splitYearOpt">Modalità Divisione 2 Pagine</label>
-          <select id="splitYearOpt" onchange="updateCalendar()">
+          <select id="splitYearOpt" data-refresh-calendar>
             <option value="split_years" selected>Dividi per Anno (Pagina 1: Primo Anno / Pagina 2: Secondo Anno)
             </option>
             <option value="chronological">Sequenziale (50% Mesi / 50% Mesi)</option>
@@ -796,12 +789,12 @@
 
         <div class="form-group">
           <label for="pdfOrientation">Orientamento Foglio</label>
-          <select id="pdfOrientation" onchange="updateCalendar()">
+          <select id="pdfOrientation" data-refresh-calendar>
             <option value="landscape" selected>Orizzontale (Landscape)</option>
             <option value="portrait">Verticale (Portrait)</option>
           </select>
         </div>
-        <button onclick="exportToPDF()"
+        <button id="exportPdfButton"
           style="width: 100%; padding: 10px; background-color: #16a34a; font-size: 0.9rem; margin-top: 4px;">
           Scarica PDF
         </button>
@@ -824,7 +817,35 @@
     const defaultPalette = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4f46e5', '#059669', '#ca8a04'];
 
     document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById('fileInput').addEventListener('change', handleMultipleFileUpload);
+      document.getElementById('deleteSelectedYearsButton').addEventListener('click', deleteSelectedYears);
+      document.getElementById('sectorLegend').addEventListener('change', event => {
+        const picker = event.target.closest('.sector-color-picker');
+        if (!picker) return;
+        updateCategoryColor(picker.dataset.sector, picker.value);
+      });
+      document.getElementById('yearSelect').addEventListener('change', updateCalendar);
+      document.getElementById('eventForm').addEventListener('submit', saveEvent);
+      document.getElementById('resetFormButton').addEventListener('click', resetForm);
+      document.getElementById('clearAllButton').addEventListener('click', clearAllEvents);
+      document.getElementById('exportPdfButton').addEventListener('click', exportToPDF);
+      document.querySelectorAll('[data-refresh-calendar]').forEach(control => {
+        control.addEventListener('change', updateCalendar);
+      });
+      document.getElementById('pageLayoutOpt').addEventListener('change', () => {
+        toggleSplitOption();
+        updateCalendar();
+      });
+      document.getElementById('eventListContainer').addEventListener('click', event => {
+        const button = event.target.closest('[data-action][data-event-id]');
+        if (!button) return;
+        const id = button.dataset.eventId;
+        if (button.dataset.action === 'edit') editEvent(id);
+        if (button.dataset.action === 'delete') deleteEvent(id);
+      });
+
       updateYearOptions();
+      renderSectorLegend();
       renderEventList();
       updateCalendar();
     });
@@ -913,9 +934,7 @@
 
       if (confirm(`Sei sicuro di voler eliminare gli eventi per gli anni: ${selectedYears.join(', ')}?`)) {
         events = events.filter(e => !selectedYears.includes(e.date.split('-')[0]));
-        updateYearOptions();
-        renderEventList();
-        updateCalendar();
+        refreshUI({ years: true });
       }
     }
 
@@ -944,10 +963,7 @@
 
       if (newEvents.length > 0) {
         events = [...events, ...newEvents];
-        updateYearOptions();
-        renderSectorLegend();
-        renderEventList();
-        updateCalendar();
+        refreshUI({ years: true, legend: true });
       } else {
         alert("Nessun evento valido trovato nei file selezionati.");
       }
@@ -1090,7 +1106,7 @@
         chip.className = 'sector-chip';
         chip.innerHTML = `
           <div class="sector-chip-left">
-            <input type="color" class="sector-color-picker" value="${sectorColors[sec]}" onchange="updateCategoryColor('${sec}', this.value)">
+            <input type="color" class="sector-color-picker" value="${sectorColors[sec]}" >
             <span>${sec}</span>
           </div>
         `;
@@ -1105,8 +1121,7 @@
           evt.color = newColor;
         }
       });
-      renderEventList();
-      updateCalendar();
+      refreshUI();
     }
 
     function saveEvent(e) {
@@ -1128,10 +1143,7 @@
       }
 
       resetForm();
-      updateYearOptions();
-      renderSectorLegend();
-      renderEventList();
-      updateCalendar();
+      refreshUI({ years: true, legend: true });
     }
 
     function editEvent(id) {
@@ -1147,9 +1159,7 @@
 
     function deleteEvent(id) {
       events = events.filter(e => e.id !== id);
-      updateYearOptions();
-      renderEventList();
-      updateCalendar();
+      refreshUI({ years: true });
     }
 
     function clearAllEvents() {
@@ -1157,9 +1167,7 @@
         events = [];
         sectorColors = {};
         document.getElementById('sectorLegend').innerHTML = '';
-        updateYearOptions();
-        renderEventList();
-        updateCalendar();
+        refreshUI({ years: true });
       }
     }
 
@@ -1189,8 +1197,8 @@
             </div>
           </div>
           <div>
-            <button type="button" class="action-btn" onclick="editEvent('${evt.id}')">✎</button>
-            <button type="button" class="action-btn delete" onclick="deleteEvent('${evt.id}')">&times;</button>
+            <button type="button" class="action-btn" data-action="edit" data-event-id="${evt.id}">✎</button>
+            <button type="button" class="action-btn delete" data-action="delete" data-event-id="${evt.id}">&times;</button>
           </div>
         `;
         container.appendChild(item);
@@ -1201,11 +1209,11 @@
       if (count === 12) {
         return orientation === 'landscape' ? { cols: 4, rows: 3 } : { cols: 3, rows: 4 };
       }
-      if (count <= 6) {
-        return orientation === 'landscape' ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
-      }
       if (count <= 4) {
         return { cols: 2, rows: 2 };
+      }
+      if (count <= 6) {
+        return orientation === 'landscape' ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
       }
       if (count <= 8) {
         return orientation === 'landscape' ? { cols: 4, rows: 2 } : { cols: 2, rows: 4 };
@@ -1216,8 +1224,7 @@
     }
 
     function getMonthEventCount(year, month) {
-      const monthStr = String(month + 1).padStart(2, '0');
-      return events.filter(e => e.date.startsWith(`${year}-${monthStr}`)).length;
+      return getEventsForMonth(year, month).length;
     }
 
     function buildListRowWeights(items, cols, rows) {
@@ -1239,8 +1246,7 @@
     function renderPdfPageLegend(pageElement, visibleItems) {
       const usedSectors = new Set();
       visibleItems.forEach(item => {
-        const monthStr = String(item.month + 1).padStart(2, '0');
-        events.filter(e => e.date.startsWith(`${item.year}-${monthStr}`)).forEach(e => {
+        getEventsForMonth(item.year, item.month).forEach(e => {
           if (e.sector) usedSectors.add(e.sector);
         });
       });
@@ -1262,6 +1268,18 @@
       });
 
       pageElement.appendChild(legendNode);
+    }
+
+    function getEventsForMonth(year, month) {
+      const monthStr = String(month + 1).padStart(2, '0');
+      return events.filter(event => event.date.startsWith(`${year}-${monthStr}`));
+    }
+
+    function refreshUI({ years = false, legend = false } = {}) {
+      if (years) updateYearOptions();
+      if (legend) renderSectorLegend();
+      renderEventList();
+      updateCalendar();
     }
 
     function updateCalendar() {
@@ -1464,9 +1482,7 @@
       const card = document.createElement('div');
       card.className = 'list-view-month';
 
-      const monthStr = String(month + 1).padStart(2, '0');
-      const monthEvents = events
-        .filter(e => e.date.startsWith(`${year}-${monthStr}`))
+      const monthEvents = getEventsForMonth(year, month)
         .sort((a, b) => a.date.localeCompare(b.date));
 
       const header = document.createElement('div');
@@ -1523,7 +1539,7 @@
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: pageSize, orientation: orientation },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { mode: ['avoid-all', 'css'] }
       };
 
       html2pdf().set(opt).from(element).save();
