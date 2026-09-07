@@ -427,8 +427,8 @@
       display: grid;
       gap: 5mm;
       width: 100%;
-      height: 100%;
-      flex: 1;
+      height: auto;
+      flex: 1 1 auto;
       min-height: 0;
     }
 
@@ -439,6 +439,13 @@
       break-inside: avoid-page !important;
       box-sizing: border-box;
       max-height: 100%;
+    }
+
+    .pdf-page>.month-card,
+    .pdf-page>.list-view-month {
+      flex: 1 1 auto;
+      height: auto;
+      min-height: 0;
     }
 
     /* Stili Grafica Calendario Singolo Mese (Fixed Grid) */
@@ -1035,11 +1042,14 @@
           const title = row.Summary || row.Subject || row.Title || row.Event || row.Name || row.Titolo || row.Oggetto;
           if (!title) return;
 
-          let rawDate = row.Start || row['Start Date'] || row.DTSTART || row.Date || row.Data;
-          if (!rawDate) return;
+          let rawStartDate = row.Start || row['Start Date'] || row.DTSTART || row.Date || row.Data;
+          if (!rawStartDate) return;
 
-          let formattedDate = parseRawDate(rawDate);
-          if (!formattedDate) return;
+          const formattedStartDate = parseRawDate(rawStartDate);
+          if (!formattedStartDate) return;
+
+          const rawEndDate = row.End || row['End Date'] || row.DTEND || row.EndDate || row['Data Fine'];
+          const formattedEndDate = parseRawDate(rawEndDate) || formattedStartDate;
 
           let sector = row.Calendar || row.Sector || row.Category || row.Categoria || row.Settore || sheetName;
           if (typeof sector === 'string' && sector.includes('_')) {
@@ -1052,17 +1062,37 @@
             paletteIndex++;
           }
 
-          importedEvents.push({
-            id: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
-            title: String(title).trim(),
-            date: formattedDate,
-            color: sectorColors[sector],
-            sector: sector
+          const eventDates = getInclusiveDates(formattedStartDate, formattedEndDate);
+          eventDates.forEach(eventDate => {
+            importedEvents.push({
+              id: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
+              title: String(title).trim(),
+              date: eventDate,
+              color: sectorColors[sector],
+              sector: sector
+            });
           });
         });
       });
 
       return { events: importedEvents, nextPaletteIndex: paletteIndex };
+    }
+
+    function getInclusiveDates(startDate, endDate) {
+      const dates = [];
+      const cursor = new Date(`${startDate}T00:00:00Z`);
+      const lastDate = new Date(`${endDate}T00:00:00Z`);
+
+      if (isNaN(cursor.getTime()) || isNaN(lastDate.getTime()) || cursor > lastDate) {
+        return [startDate];
+      }
+
+      while (cursor <= lastDate) {
+        dates.push(cursor.toISOString().split('T')[0]);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+
+      return dates;
     }
 
     function parseRawDate(raw) {
@@ -1530,12 +1560,12 @@
       }
 
       const opt = {
-        margin: pageLayout === 'multi' ? 8 : 4,
+        margin: 0,
         filename: `Calendario_${yearSelection}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: 'mm', format: pageSize, orientation: orientation },
-        pagebreak: { mode: ['avoid-all', 'css'] }
+        pagebreak: { mode: ['css'] }
       };
 
       try {
