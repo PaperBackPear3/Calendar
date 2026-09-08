@@ -1548,6 +1548,9 @@
       const orientation = document.getElementById('pdfOrientation').value;
       const pageLayout = document.getElementById('pageLayoutOpt').value;
       const button = document.querySelector('button[onclick="exportToPDF()"]');
+      const pages = [...element.querySelectorAll('.pdf-page')];
+      const originalGap = element.style.gap;
+      const originalPageHeights = pages.map(page => page.style.height);
 
       if (typeof html2pdf !== 'function') {
         alert("La libreria per l'esportazione PDF non è stata caricata. Ricarica la pagina e riprova.");
@@ -1565,11 +1568,15 @@
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: 'mm', format: pageSize, orientation: orientation },
-        pagebreak: { mode: ['css'] }
+        pagebreak: { mode: [] }
       };
 
       try {
         if (document.fonts?.ready) await document.fonts.ready;
+        element.style.gap = '0';
+        pages.forEach(page => {
+          page.style.height = `${Math.max(0, page.getBoundingClientRect().height - 1)}px`;
+        });
         if (button) {
           button.disabled = true;
           button.textContent = 'Generazione PDF…';
@@ -1579,6 +1586,10 @@
         console.error('Errore durante l\'esportazione PDF:', error);
         alert('Impossibile generare il PDF. Riprova.');
       } finally {
+        element.style.gap = originalGap;
+        pages.forEach((page, index) => {
+          page.style.height = originalPageHeights[index];
+        });
         if (button) {
           button.disabled = false;
           button.textContent = 'Scarica PDF';
